@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New courier entry</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+button,input,textarea{font:inherit;color:inherit;border:0;outline:none;background:none;-webkit-tap-highlight-color:transparent;resize:none}
+a{color:#1F5A43;text-decoration:none}a:hover{color:#1F5A43}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #F0F3F1; color: #121815; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, Roboto, sans-serif">
+<div style="height: 100px; box-sizing: border-box; padding: 54px 8px 0; display: grid; grid-template-columns: 90px minmax(0, 1fr) 90px; align-items: center">
+<a href="More.dc.html" style="font-size: 17px; padding: 10px 8px">Cancel</a>
+<span style="text-align: center; font-size: 17px; font-weight: 600">New courier entry</span>
+<span></span>
+</div>
+<form style="margin: 0; box-sizing: border-box; padding: 4px 16px 120px; display: flex; flex-direction: column; gap: 16px">
+<div role="group" aria-label="Destination" style="display: flex; background: rgba(118,128,121,.12); border-radius: 10px; padding: 2px">
+<button type="button" aria-pressed="true" style="flex-grow: 1; height: 32px; border-radius: 8px; font-size: 14px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,.08)">Buyer</button>
+<button type="button" aria-pressed="false" style="flex-grow: 1; height: 32px; border-radius: 8px; font-size: 14px; color: #4F5853">Custom address</button>
+</div>
+<div style="background: #FFFFFF; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.035); overflow: hidden">
+<button type="button" style="width: 100%; min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; font-size: 16px"><span>Buyer</span><span style="color: #4F5853; display: flex; align-items: center; gap: 6px">Tata Tea<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B756F" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></span></button>
+<div style="height: 0.5px; background: #E2E7E4; margin-left: 14px"></div>
+<div style="padding: 10px 14px; display: flex; flex-direction: column; gap: 4px">
+<label for="addr" style="font-size: 12px; color: #6B756F">Address · Filled from buyer</label>
+<textarea id="addr" rows="2" style="font-size: 16px; padding: 0; line-height: 1.35">Plot 12, Tea Park, Kolkata, WB 700001</textarea>
+</div>
+</div>
+<div style="background: #FFFFFF; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.035); overflow: hidden">
+<button type="button" style="width: 100%; min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; font-size: 16px"><span>Courier</span><span style="color: #4F5853; display: flex; align-items: center; gap: 6px">Blue Dart Express<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B756F" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></span></button>
+<div style="height: 0.5px; background: #E2E7E4; margin-left: 14px"></div>
+<div style="padding: 8px 8px 8px 14px; display: flex; align-items: center; gap: 8px">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px">
+<label for="trk" style="font-size: 12px; color: #6B756F">Tracking number</label>
+<input id="trk" value="BD98273491" style="font-size: 16px; padding: 0; height: 22px">
+</div>
+<button type="button" aria-label="Scan barcode" style="width: 44px; height: 44px; border-radius: 11px; background: rgba(31,90,67,.08); color: #1F5A43; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 9v6M11 9v6M14 9v6M17 9v6"></path></svg></button>
+</div>
+</div>
+<div style="background: #FFFFFF; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.035); overflow: hidden">
+<button type="button" style="width: 100%; min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; font-size: 16px"><span>Pickup</span><span style="color: #4F5853">Sat, 17 Oct 2026</span></button>
+<div style="height: 0.5px; background: #E2E7E4; margin-left: 14px"></div>
+<div style="min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between"><span style="font-size: 16px">Auction (AUC)</span><span role="switch" aria-checked="false" aria-label="Auction" style="width: 51px; height: 31px; border-radius: 16px; background: rgba(118,128,121,.24); position: relative; display: block"><span style="position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,.15)"></span></span></div>
+<div style="height: 0.5px; background: #E2E7E4; margin-left: 14px"></div>
+<div style="min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between"><span style="font-size: 16px">Private (PVT)</span><span role="switch" aria-checked="true" aria-label="Private" style="width: 51px; height: 31px; border-radius: 16px; background: #1F5A43; position: relative; display: block"><span style="position: absolute; top: 2px; right: 2px; width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,.15)"></span></span></div>
+<div style="height: 0.5px; background: #E2E7E4; margin-left: 14px"></div>
+<div style="min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between"><label for="w" style="font-size: 16px">Weight</label><span style="display: flex; align-items: center; gap: 4px; color: #4F5853"><input id="w" value="2.5" inputmode="decimal" style="width: 50px; text-align: right; font-size: 16px; padding: 0">kg</span></div>
+</div>
+<div style="display: flex; gap: 10px; align-items: center">
+<button type="button" style="width: 72px; height: 72px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.035); color: #1F5A43; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>Photo</button>
+<span style="font-size: 13px; color: #6B756F">Add a photo of the parcel. Optional.</span>
+</div>
+</form>
+<div style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 18px 16px 34px; background: linear-gradient(to bottom, rgba(240,243,241,0) 0%, rgba(240,243,241,.5) 12%, #F0F3F1 28%)">
+<a href="More.dc.html" style="height: 50px; border-radius: 13px; background: #1F5A43; color: #FFFFFF; font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: center">Save entry</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

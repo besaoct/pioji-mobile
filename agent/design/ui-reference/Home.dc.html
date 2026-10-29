@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+button,input{font:inherit;color:inherit;border:0;outline:none;background:none;-webkit-tap-highlight-color:transparent}
+a{color:inherit;text-decoration:none}a:hover{color:inherit}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: {{c.bg}}; color: {{c.t1}}; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, Roboto, sans-serif">
+<div style="box-sizing: border-box; padding: 58px 16px 120px; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; justify-content: space-between; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; color: {{c.t3}}">Thursday, 29 October 2026</span>
+<h1 style="margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -0.4px">Today</h1>
+</div>
+<button type="button" aria-label="Notifications" style="width: 40px; height: 40px; border-radius: 20px; background: {{c.sf}}; box-shadow: {{c.sh}}; display: flex; align-items: center; justify-content: center; color: {{c.t2}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 7 2 7H4s2-2 2-7M10 20a2 2 0 0 0 4 0"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<a href="Samples.dc.html" style="background: {{c.sf}}; box-shadow: {{c.sh}}; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: {{c.t3}}">Samples received</span>
+<span style="font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums">48</span>
+</a>
+<a href="Samples.dc.html" style="background: {{c.sf}}; box-shadow: {{c.sh}}; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: {{c.t3}}">Unbatched</span>
+<span style="font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums">12</span>
+</a>
+<a href="BidBook.dc.html" style="background: {{c.sf}}; box-shadow: {{c.sh}}; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: {{c.t3}}">Open bids</span>
+<span style="font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums">7</span>
+</a>
+<a href="More.dc.html" style="background: {{c.sf}}; box-shadow: {{c.sh}}; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: {{c.t3}}">Ex-factory mismatches</span>
+<span style="font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; color: {{c.wn}}">3</span>
+</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; color: {{c.t3}}; padding-left: 4px">Quick actions</span>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+<a href="NewSample.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 6px">
+<span style="width: 56px; height: 56px; border-radius: 16px; background: {{c.sf}}; box-shadow: {{c.sh}}; display: flex; align-items: center; justify-content: center; color: {{c.ac}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3"></path></svg></span>
+<span style="font-size: 12px; color: {{c.t2}}">New sample</span>
+</a>
+<a href="Samples.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 6px">
+<span style="width: 56px; height: 56px; border-radius: 16px; background: {{c.sf}}; box-shadow: {{c.sh}}; display: flex; align-items: center; justify-content: center; color: {{c.ac}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM12 11v6M9 14h6"></path></svg></span>
+<span style="font-size: 12px; color: {{c.t2}}">New offer</span>
+</a>
+<a href="Samples.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 6px">
+<span style="width: 56px; height: 56px; border-radius: 16px; background: {{c.sf}}; box-shadow: {{c.sh}}; display: flex; align-items: center; justify-content: center; color: {{c.ac}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M17 8v6M14 11h6"></path></svg></span>
+<span style="font-size: 12px; color: {{c.t2}}">Allocate</span>
+</a>
+<a href="Courier.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 6px">
+<span style="width: 56px; height: 56px; border-radius: 16px; background: {{c.sf}}; box-shadow: {{c.sh}}; display: flex; align-items: center; justify-content: center; color: {{c.ac}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="1.8"></circle><circle cx="17" cy="18" r="1.8"></circle></svg></span>
+<span style="font-size: 12px; color: {{c.t2}}">Courier</span>
+</a>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; color: {{c.t3}}; padding-left: 4px">Today's checklist</span>
+<div style="background: {{c.sf}}; box-shadow: {{c.sh}}; border-radius: 14px; overflow: hidden">
+<a href="Samples.dc.html" style="min-height: 52px; padding: 0 14px; display: flex; align-items: center; gap: 12px">
+<span style="width: 28px; height: 28px; border-radius: 8px; background: {{c.wnt}}; color: {{c.wn}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"></path></svg></span>
+<span title="12 samples aren't in a batch yet" style="flex: 1 1 0; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">12 samples aren't in a batch yet</span>
+<span style="font-size: 15px; color: {{c.ac}}; white-space: nowrap; flex-shrink: 0">Auto-batch</span>
+</a>
+<div style="height: 0.5px; background: {{c.sep}}; margin-left: 54px"></div>
+<a href="Samples.dc.html" style="min-height: 52px; padding: 0 14px; display: flex; align-items: center; gap: 12px">
+<span style="width: 28px; height: 28px; border-radius: 8px; background: {{c.wnt}}; color: {{c.wn}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"></path></svg></span>
+<span title="5 lots offered today have no buyers" style="flex: 1 1 0; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">5 lots offered today have no buyers</span>
+<span style="font-size: 15px; color: {{c.ac}}; white-space: nowrap; flex-shrink: 0">Allocate</span>
+</a>
+<div style="height: 0.5px; background: {{c.sep}}; margin-left: 54px"></div>
+<a href="BidBook.dc.html" style="min-height: 52px; padding: 0 14px; display: flex; align-items: center; gap: 12px">
+<span style="width: 28px; height: 28px; border-radius: 8px; background: {{c.wnt}}; color: {{c.wn}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m13 4 7 7-3 3-7-7zM11.5 8.5 4 16l4 4 7.5-7.5"></path></svg></span>
+<span title="3 bids are awaiting allocation" style="flex: 1 1 0; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">3 bids are awaiting allocation</span>
+<span style="font-size: 15px; color: {{c.ac}}; white-space: nowrap; flex-shrink: 0">Review</span>
+</a>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; color: {{c.t3}}; padding-left: 4px">Recent activity</span>
+<div style="background: {{c.sf}}; box-shadow: {{c.sh}}; border-radius: 14px; overflow: hidden">
+<a href="Samples.dc.html" style="min-height: 56px; padding: 8px 14px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 10px">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px">Assam Valley · BOP</span><span style="font-size: 13px; color: {{c.t3}}">Sample SMP 2048 · 10:42</span></span>
+<span style="font-size: 13px; font-weight: 500; color: {{c.ok}}; background: {{c.okt}}; padding: 3px 9px; border-radius: 7px">Received</span>
+</a>
+<div style="height: 0.5px; background: {{c.sep}}; margin-left: 14px"></div>
+<a href="BidBook.dc.html" style="min-height: 56px; padding: 8px 14px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 10px">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px">Assam Valley · BP</span><span style="font-size: 13px; color: {{c.t3}}">Bid INV-BB-891 · 09:15</span></span>
+<span style="font-size: 13px; font-weight: 500; color: {{c.ac}}; background: {{c.act}}; padding: 3px 9px; border-radius: 7px">Open</span>
+</a>
+</div>
+</div>
+</div>
+<div style="position: absolute; left: 0; bottom: 0; width: 390px; height: 142px">
+<dc-import name="TabBar" active="home" dark="{{dark}}" hint-size="390px,142px"></dc-import>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const dark = this.props.dark ?? false;
+const c = dark
+? { bg: '#0A0D0B', sf: '#181D1A', t1: '#EEF3F0', t2: '#ABB5AF', t3: '#87918B', sep: '#28302C', ac: '#4FB487', act: 'rgba(79,180,135,.14)', ok: '#4CC27F', okt: 'rgba(76,194,127,.14)', wn: '#E5B040', wnt: 'rgba(229,176,64,.14)', sh: 'none' }
+: { bg: '#F0F3F1', sf: '#FFFFFF', t1: '#121815', t2: '#4F5853', t3: '#6B756F', sep: '#E2E7E4', ac: '#1F5A43', act: 'rgba(31,90,67,.08)', ok: '#2E7D4F', okt: 'rgba(46,125,79,.12)', wn: '#9A6200', wnt: 'rgba(154,98,0,.12)', sh: '0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.035)' };
+return { c, dark };
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tab bar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 142px; display: flex; flex-direction: column; justify-content: flex-end; background: {{bar}}; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, Roboto, sans-serif">
+<nav aria-label="Main" style="height: 82px; box-sizing: border-box; padding: 4px 8px 26px; display: flex; justify-content: space-around; align-items: flex-start">
+<a href="Samples.dc.html" style="width: 64px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: {{t.samples.fg}}">
+<span style="width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: {{t.samples.bg}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3M7 15h10"></path></svg></span>
+<span style="font-size: 11px">Samples</span>
+</a>
+<a href="Samples.dc.html" style="width: 64px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: {{t.offers.fg}}">
+<span style="width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: {{t.offers.bg}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M9 13h6M9 17h6"></path></svg></span>
+<span style="font-size: 11px">Offers</span>
+</a>
+<a href="Home.dc.html" style="width: 64px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: {{t.home.fg}}">
+<span style="width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: {{t.home.bg}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg></span>
+<span style="font-size: 11px">Home</span>
+</a>
+<a href="BidBook.dc.html" style="width: 64px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: {{t.bids.fg}}">
+<span style="width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: {{t.bids.bg}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 4 7 7-3 3-7-7zM11.5 8.5 4 16l4 4 7.5-7.5M4 21h9"></path></svg></span>
+<span style="font-size: 11px">Bids</span>
+</a>
+<a href="More.dc.html" style="width: 64px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: {{t.more.fg}}">
+<span style="width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: {{t.more.bg}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"></rect><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"></rect><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"></rect><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"></rect></svg></span>
+<span style="font-size: 11px">More</span>
+</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["samples","offers","home","bids","more"],"default":"home"},"dark":{"editor":"boolean","default":false},"$preview":{"width":390,"height":142}}'>
+class Component extends DCLogic {
+renderVals() {
+const active = this.props.active ?? 'home';
+const dark = this.props.dark ?? false;
+const base = dark ? [10, 13, 11] : [240, 243, 241];
+const deep = dark ? [0, 0, 0] : [201, 211, 205];
+const ease = (x) => x * x * x * (x * (x * 6 - 15) + 10);
+const stops = [];
+for (let i = 0; i <= 24; i++) {
+const p = i / 24;
+const a = ease(Math.min(1, p / 0.42));
+const k = ease(p);
+const c = base.map((v, j) => Math.round(v + (deep[j] - v) * k));
+stops.push('rgba(' + c.join(',') + ',' + a.toFixed(3) + ') ' + (p * 100).toFixed(1) + '%');
+}
+const bar = 'linear-gradient(to bottom, ' + stops.join(', ') + ')';
+const on = dark ? { fg: '#4FB487', bg: 'rgba(79,180,135,.14)' } : { fg: '#1F5A43', bg: 'rgba(31,90,67,.08)' };
+const off = dark ? { fg: '#87918B', bg: 'transparent' } : { fg: '#6B756F', bg: 'transparent' };
+const t = {};
+['samples', 'offers', 'home', 'bids', 'more'].forEach((k) => { t[k] = k === active ? on : off; });
+return { t, bar };
+}
+}
+</script>
+</body>
+</html>

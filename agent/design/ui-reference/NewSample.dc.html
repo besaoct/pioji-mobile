@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New sample</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+button,input,textarea{font:inherit;color:inherit;border:0;outline:none;background:none;-webkit-tap-highlight-color:transparent;resize:none}
+a{color:#1F5A43;text-decoration:none}a:hover{color:#1F5A43}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #F0F3F1; color: #121815; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, Roboto, sans-serif">
+<div style="height: 100px; box-sizing: border-box; padding: 54px 8px 0; display: grid; grid-template-columns: 90px minmax(0, 1fr) 90px; align-items: center">
+<a href="Samples.dc.html" style="font-size: 17px; padding: 10px 8px">Cancel</a>
+<span style="text-align: center; font-size: 17px; font-weight: 600">New sample</span>
+<span></span>
+</div>
+<form style="margin: 0; box-sizing: border-box; padding: 4px 16px 120px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 7px">
+<span style="font-size: 13px; color: #6B756F; padding-left: 4px">Lot</span>
+<div style="background: #FFFFFF; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.035); overflow: hidden">
+<button type="button" style="width: 100%; min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; font-size: 16px"><span>Arrival date</span><span style="color: #4F5853; display: flex; align-items: center; gap: 6px">17 Oct 2026<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B756F" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></span></button>
+<div style="height: 0.5px; background: #E2E7E4; margin-left: 14px"></div>
+<button type="button" style="width: 100%; min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; font-size: 16px"><span>Garden</span><span style="color: #4F5853; display: flex; align-items: center; gap: 6px">Assam Valley<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B756F" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></span></button>
+<div style="height: 0.5px; background: #E2E7E4; margin-left: 14px"></div>
+<button type="button" style="width: 100%; min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; font-size: 16px"><span>Grade</span><span style="color: #4F5853; display: flex; align-items: center; gap: 6px">BOP<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B756F" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></span></button>
+<div style="height: 0.5px; background: #E2E7E4; margin-left: 14px"></div>
+<div style="display: grid; grid-template-columns: 110px minmax(0, 1fr)">
+<div style="padding: 8px 14px; display: flex; flex-direction: column; gap: 2px; box-shadow: inset -0.5px 0 0 #E2E7E4">
+<label for="pfx" style="font-size: 12px; color: #6B756F">Prefix</label>
+<input id="pfx" value="SMP" style="font-size: 16px; padding: 0; height: 22px">
+</div>
+<div style="padding: 8px 14px; display: flex; flex-direction: column; gap: 2px">
+<label for="inv" style="font-size: 12px; color: #6B756F">Invoice no</label>
+<input id="inv" value="2048" inputmode="numeric" style="font-size: 16px; padding: 0; height: 22px">
+</div>
+</div>
+</div>
+<span style="font-size: 13px; color: #B3261E; padding-left: 4px">This invoice already exists. You can save it anyway.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 7px">
+<span style="font-size: 13px; color: #6B756F; padding-left: 4px">Weight</span>
+<div style="background: #FFFFFF; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.035); overflow: hidden; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<div style="padding: 8px 14px; display: flex; flex-direction: column; gap: 2px; box-shadow: inset -0.5px 0 0 #E2E7E4">
+<label for="pk" style="font-size: 12px; color: #6B756F">Packages</label>
+<input id="pk" value="15" inputmode="numeric" style="font-size: 16px; padding: 0; height: 22px">
+</div>
+<div style="padding: 8px 14px; display: flex; flex-direction: column; gap: 2px; box-shadow: inset -0.5px 0 0 #E2E7E4">
+<label for="wt" style="font-size: 12px; color: #6B756F">Per pkg, kg</label>
+<input id="wt" value="40" inputmode="decimal" style="font-size: 16px; padding: 0; height: 22px">
+</div>
+<div style="padding: 8px 14px; display: flex; flex-direction: column; gap: 2px; background: rgba(31,90,67,.06)">
+<label for="tk" style="font-size: 12px; color: #1F5A43">Total kg · Calculated</label>
+<input id="tk" value="600" inputmode="decimal" style="font-size: 16px; padding: 0; height: 22px; font-weight: 600">
+</div>
+</div>
+<span style="font-size: 13px; color: #6B756F; padding-left: 4px">Enter any two. The third is calculated.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 7px">
+<span style="font-size: 13px; color: #6B756F; padding-left: 4px">Details</span>
+<div style="background: #FFFFFF; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.035); overflow: hidden">
+<div style="min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 16px">Sample type</span>
+<span role="group" aria-label="Sample type" style="display: flex; background: rgba(118,128,121,.12); border-radius: 9px; padding: 2px">
+<button type="button" aria-pressed="true" style="height: 28px; padding: 0 12px; border-radius: 7px; background: #FFFFFF; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.08)">Original</button>
+<button type="button" aria-pressed="false" style="height: 28px; padding: 0 12px; border-radius: 7px; font-size: 14px; color: #4F5853">Standard</button>
+</span>
+</div>
+<div style="height: 0.5px; background: #E2E7E4; margin-left: 14px"></div>
+<button type="button" style="width: 100%; min-height: 48px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; font-size: 16px"><span>Status</span><span style="color: #4F5853; display: flex; align-items: center; gap: 6px">Received<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B756F" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></span></button>
+<div style="height: 0.5px; background: #E2E7E4; margin-left: 14px"></div>
+<div style="padding: 10px 14px; display: flex; flex-direction: column; gap: 4px">
+<label for="rm" style="font-size: 12px; color: #6B756F">Remarks</label>
+<textarea id="rm" rows="2" style="font-size: 16px; padding: 0; line-height: 1.35">Clean liquor sample</textarea>
+</div>
+</div>
+</div>
+</form>
+<div style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 18px 16px 34px; background: linear-gradient(to bottom, rgba(240,243,241,0) 0%, rgba(240,243,241,.5) 12%, #F0F3F1 28%)">
+<a href="Samples.dc.html" style="height: 50px; border-radius: 13px; background: #1F5A43; color: #FFFFFF; font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: center">Save sample</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
