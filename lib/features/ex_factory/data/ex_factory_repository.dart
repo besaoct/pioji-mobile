@@ -99,6 +99,8 @@ class ExFactoryRepository {
   const ExFactoryRepository(this._api);
   final Api _api;
 
+  Future<ExFactoryBill> get(int id) async => ExFactoryBill.fromJson(await _api.one('/ex-factory/$id'));
+
   Future<Page<ExFactoryBill>> list(ListQuery q, {int page = 1}) =>
       _api.page('/ex-factory', ExFactoryBill.fromJson, query: q.toQuery(), page: page);
 

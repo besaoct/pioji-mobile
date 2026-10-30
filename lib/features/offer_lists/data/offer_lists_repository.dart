@@ -82,6 +82,8 @@ class OfferListsRepository {
   const OfferListsRepository(this._api);
   final Api _api;
 
+  Future<OfferList> get(int id) async => OfferList.fromJson(await _api.one('/offer-lists/$id'));
+
   Future<Page<OfferList>> list(ListQuery q, {int page = 1}) =>
       _api.page('/offer-lists', OfferList.fromJson, query: q.toQuery(), page: page);
 

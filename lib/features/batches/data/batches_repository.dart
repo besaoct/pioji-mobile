@@ -45,6 +45,8 @@ class BatchesRepository {
   const BatchesRepository(this._api);
   final Api _api;
 
+  Future<Batch> get(int id) async => Batch.fromJson(await _api.one('/batches/$id'));
+
   Future<Page<Batch>> list(ListQuery q, {int page = 1}) =>
       _api.page('/batches', Batch.fromJson, query: q.toQuery(), page: page);
 

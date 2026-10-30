@@ -67,6 +67,8 @@ class CourierRepository {
   const CourierRepository(this._api);
   final Api _api;
 
+  Future<CourierEntry> get(int id) async => CourierEntry.fromJson(await _api.one('/courier-entries/$id'));
+
   Future<Page<CourierEntry>> list(ListQuery q, {int page = 1}) =>
       _api.page('/courier-entries', CourierEntry.fromJson, query: q.toQuery(), page: page);
 

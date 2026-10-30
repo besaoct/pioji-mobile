@@ -53,8 +53,8 @@ class MasterPickerRow extends ConsumerWidget {
   }
 }
 
-/// Grade picker from the fixed grade list.
-class GradePickerRow extends StatelessWidget {
+/// Grade picker from `GET /grades`, falling back to the built-in list.
+class GradePickerRow extends ConsumerWidget {
   const GradePickerRow({super.key, required this.value, required this.onChanged, this.error, this.label = 'Grade'});
 
   final String? value;
@@ -63,17 +63,19 @@ class GradePickerRow extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ValueRow(
       label: label,
       value: value,
       error: error,
       onTap: () async {
+        final grades = await ref.read(gradesProvider.future);
+        if (!context.mounted) return;
         final picked = await showPickerSheet<String>(
           context,
           title: label,
           selected: value,
-          options: [for (final g in kTeaGrades) PickOption(g, g)],
+          options: [for (final g in grades) PickOption(g, g)],
         );
         if (picked != null) onChanged(picked);
       },

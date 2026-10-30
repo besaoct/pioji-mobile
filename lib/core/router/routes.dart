@@ -10,6 +10,7 @@ abstract final class Routes {
   static const samples = 'samples';
   static const sampleNew = 'sampleNew';
   static const sampleDetail = 'sampleDetail';
+  static const sampleEdit = 'sampleEdit';
   static const batches = 'batches';
   static const batchNew = 'batchNew';
   static const batchAuto = 'batchAuto';

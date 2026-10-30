@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/application/invalidation.dart';
 import '../../../core/design/context_ext.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/fields.dart';
@@ -18,24 +19,30 @@ import '../data/samples_repository.dart';
 import '../domain/sample.dart';
 
 class SampleFormScreen extends ConsumerStatefulWidget {
-  const SampleFormScreen({super.key});
+  const SampleFormScreen({super.key, this.editing});
+
+  /// The sample to edit; null creates a new one.
+  final Sample? editing;
 
   @override
   ConsumerState<SampleFormScreen> createState() => _SampleFormScreenState();
 }
 
 class _SampleFormScreenState extends ConsumerState<SampleFormScreen> with FormSubmit {
-  DateTime _arrival = DateTime.now();
-  MasterItem? _garden;
-  String? _grade;
-  String _type = 'Original';
-  SampleStatus _status = SampleStatus.received;
-  final _prefix = TextEditingController();
-  final _inv = TextEditingController();
-  final _pkgs = TextEditingController();
-  final _nett = TextEditingController();
-  final _total = TextEditingController();
-  final _remarks = TextEditingController();
+  late final Sample? _e = widget.editing;
+  late DateTime _arrival = _e?.arrivalDate ?? DateTime.now();
+  late MasterItem? _garden =
+      _e?.gardenId == null ? null : MasterItem(_e!.gardenId!, _e.gardenName ?? '#${_e.gardenId}');
+  late String? _grade = _e?.grade;
+  late String _type = _e?.sampleType ?? 'Original';
+  late SampleStatus _status =
+      _e == null || _e.status == SampleStatus.unknown ? SampleStatus.received : _e.status;
+  late final _prefix = TextEditingController(text: _e?.invoicePrefix);
+  late final _inv = TextEditingController(text: _e?.invoiceNo);
+  late final _pkgs = TextEditingController(text: _e?.packages?.toString());
+  late final _nett = TextEditingController(text: Fmt.editable(_e?.weight));
+  late final _total = TextEditingController(text: Fmt.editable(_e?.totalKgs));
+  late final _remarks = TextEditingController(text: _e?.remarks);
 
   @override
   void dispose() {
@@ -64,7 +71,11 @@ class _SampleFormScreenState extends ConsumerState<SampleFormScreen> with FormSu
     final repo = ref.read(samplesRepositoryProvider);
     final ok = await submit<bool>(
       () async {
-        await repo.create(_body());
+        if (_e == null) {
+          await repo.create(_body());
+        } else {
+          await repo.update(_e.id, _body());
+        }
         return true;
       },
       onDuplicate: (f) async {
@@ -76,7 +87,11 @@ class _SampleFormScreenState extends ConsumerState<SampleFormScreen> with FormSu
         );
         if (!again) return null;
         return submit<bool>(() async {
-          await repo.create(_body(duplicate: true));
+          if (_e == null) {
+            await repo.create(_body(duplicate: true));
+          } else {
+            await repo.update(_e.id, _body(duplicate: true));
+          }
           return true;
         });
       },
@@ -84,16 +99,21 @@ class _SampleFormScreenState extends ConsumerState<SampleFormScreen> with FormSu
     if (ok == true && mounted) {
       ref.invalidate(samplesListProvider);
       refreshSummaries(ref);
-      context.toast('Sample saved');
-      context.pop();
+      context.toast(_e == null ? 'Sample saved' : 'Sample updated');
+      // After an edit, go back to the list so the detail isn't stale.
+      if (_e == null) {
+        context.pop();
+      } else {
+        context.goNamed(Routes.samples);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return FormScaffold(
-      title: 'New sample',
-      submitLabel: 'Save sample',
+      title: _e == null ? 'New sample' : 'Edit sample',
+      submitLabel: _e == null ? 'Save sample' : 'Save changes',
       submitting: submitting,
       onSubmit: _save,
       children: [

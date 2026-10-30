@@ -5,7 +5,7 @@
 | **Base URL** | `https://gold-sardine-283964.hostingersite.com/api/v1` |
 | **Auth** | Laravel Sanctum bearer token |
 | **Format** | JSON (`multipart/form-data` only for photo uploads) |
-| **Last verified** | 2026-10-29 |
+| **Last verified** | 2026-10-30 (routes only; admin login still rejected) |
 
 > ⚠️ **Blocking issue — fix on the backend first.** The app is meant to sign in with the **admin** account, but `POST /auth/login` currently only checks the regular `users` table. The admin login (`admin@example.com`) works on `/admin/login` but returns `401 "The provided credentials are incorrect."` from the API. The API login (and the `auth:sanctum` guard on every route) needs to accept admin accounts before the app can call anything. See [Backend issues](#backend-issues-found-during-verification).
 
@@ -617,7 +617,7 @@ The bill is matched to a Sales Register entry by mark + invoice. Its `register_s
 
 ## Endpoint status table
 
-Checked live on 2026-10-29. Every protected route exists and returns `401 Unauthenticated` without a token. Response bodies **after** login are not verified yet, because no API token could be obtained (see blocking issue).
+Checked live on 2026-10-29 and again on 2026-10-30. Every documented protected route exists and returns `401 Unauthenticated` without a token. Response bodies **after** login are not verified yet, because no API token could be obtained (see blocking issue).
 
 | # | Method | Path | Route exists | Auth enforced | Response shape verified |
 |---|---|---|---|---|---|
@@ -647,6 +647,32 @@ Checked live on 2026-10-29. Every protected route exists and returns `401 Unauth
 | 9.1 | GET | `/ex-factory` | ✅ | ✅ | ⏳ |
 | 9.2 | GET | `/ex-factory/export` | ✅ | ✅ | ⏳ |
 | 9.3 | POST | `/ex-factory` | ✅ | ✅ | ⏳ |
+
+### Undocumented routes found on the server (2026-10-30)
+
+These aren't in the original guide but exist and require a token. Field names and response shapes are not verified.
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/auth/logout` | Revokes the current token |
+| GET | `/gardens` | Garden list for pickers |
+| GET | `/buyers` | Buyer list for pickers |
+| GET | `/sellers` | Seller / supplier list for pickers |
+| GET | `/grades` | Grade list for pickers |
+| GET | `/{module}/{id}` | One record, for all 8 modules: `offer-lists`, `samples`, `batches`, `courier-entries`, `bid-book`, `contracts`, `sales-register`, `ex-factory` |
+| PUT | `/samples/{id}` | Update a sample (same body as create) |
+| DELETE | `/samples/{id}` | Delete a sample |
+
+### Missing routes the app needs
+
+| Method | Path | What happens today | Needed for |
+|---|---|---|---|
+| GET | `/auth/me` (also tried `/auth/user`, `/user`, `/me`) | HTML 404 page, status 200 | Validating a stored login and showing the user's name |
+| GET | `/negotiators` (also tried `/users`) | HTML 404 page, status 200 | Bid book negotiator picker |
+| GET | `/posting-lists` | HTML 404 page, status 200 | Courier posting lists |
+| PUT | `/{id}` on offer lists, batches, courier, contracts, sales, ex-factory | 405 Method Not Allowed | Editing those records |
+| DELETE | `/{id}` on every module except samples | 405 Method Not Allowed | Deleting records |
+| GET | `/dashboard/summary` (optional) | HTML 404 page, status 200 | Loading Home's counts in one call |
 
 ---
 

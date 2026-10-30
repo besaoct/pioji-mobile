@@ -1094,41 +1094,45 @@ No secrets in the repo. `env/*.json` files hold URLs only.
 
 ## 18. Backend requirements before launch
 
-The current API is enough for create and list. A complete, production-ready app also needs these. Build the app against the existing endpoints first and add each screen action as its endpoint lands.
+Route check on 30 Oct 2026 (without a token: an existing route answers `401`, a missing one returns the HTML 404 page or `405`). Build against what exists; add each action as its endpoint lands.
 
 ### 18.1 Blockers
 
-| # | Need | Why |
+| # | Need | State |
 |---|---|---|
-| 1 | **Admin accounts accepted by `POST /auth/login`** | The app signs in with admin credentials; currently returns 401 |
-| 2 | `GET /auth/me` | Validate a stored token on launch, show the user's name in Settings |
-| 3 | `POST /auth/logout` | Revoke the token on sign out |
-| 4 | `APP_DEBUG=false` in production | Stack traces are exposed to anyone |
-| 5 | JSON 404 for unknown `/api/v1/*` paths | Currently 200 + HTML |
+| 1 | **Admin accounts accepted by `POST /auth/login`** | **Still failing (401).** Nothing else can be used until this is fixed |
+| 2 | `GET /auth/me` | **Missing.** The app keeps a stored session until a request returns 401 |
+| 3 | `POST /auth/logout` | Exists. The app calls it on sign out |
+| 4 | `APP_DEBUG=false` in production | Still on |
+| 5 | JSON 404 for unknown `/api/v1/*` paths | Still 200 + HTML |
 
 ### 18.2 Master data (for pickers)
 
-| Endpoint | Used by |
-|---|---|
-| `GET /gardens` | Offer list, sample, filters |
-| `GET /buyers` | Courier, sales, contracts, bid book, filters |
-| `GET /sellers` (suppliers) | Contracts, ex-factory |
-| `GET /grades` | Every grade field (or a fixed list agreed with the business) |
-| `GET /negotiators` (users) | Bid book |
-| `GET /posting-lists` | Courier entry |
+| Endpoint | State | Used by |
+|---|---|---|
+| `GET /gardens` | Exists | Offer list, sample |
+| `GET /buyers` | Exists | Courier, sales, contracts, bid book |
+| `GET /sellers` | Exists | Contracts, ex-factory |
+| `GET /grades` | Exists | Every grade picker (falls back to a built-in list) |
+| `GET /negotiators` | **Missing** (`/users` too) | Bid book. The picker asks for an ID meanwhile |
+| `GET /posting-lists` | **Missing** | Courier entry. The picker says it isn't available |
 
-Each should support `search` and return `id` + display name at minimum.
+Each should support `search` and return `id` + display name at minimum. Response shapes are unverified until login works.
 
 ### 18.3 Detail, edit and delete
 
-Only `PUT /bid-book/{id}` exists today. For full create, view, edit and delete, each module needs:
+| Module | `GET /{id}` | `PUT /{id}` | `DELETE /{id}` |
+|---|---|---|---|
+| Offer lists | ✅ | ❌ | ❌ |
+| Samples | ✅ | ✅ | ✅ |
+| Batches | ✅ | ❌ | ❌ |
+| Courier entries | ✅ | ❌ | ❌ |
+| Bid book | ✅ | ✅ | ❌ |
+| Contracts | ✅ | ❌ | ❌ |
+| Sales register | ✅ | ❌ | ❌ |
+| Ex-factory | ✅ | ❌ | ❌ |
 
-| Endpoint | Modules |
-|---|---|
-| `GET /{module}/{id}` | All 9 |
-| `PUT /{module}/{id}` | Offer lists, samples, batches, courier, contracts, sales, ex-factory |
-| `DELETE /{module}/{id}` | All, with the server deciding which records may be deleted (e.g. not a matched ex-factory bill) |
-| `POST /batches/{id}/samples` / `DELETE /batches/{id}/samples/{sampleId}` | Add or remove samples in an existing batch |
+The app uses every ✅: detail screens load by ID, samples can be edited and deleted, bid book lots can be edited. Still wanted: the ❌ routes (the server decides which records may be deleted, for example not a matched ex-factory bill), plus `POST /batches/{id}/samples` and `DELETE /batches/{id}/samples/{sampleId}` to change an existing batch.
 
 ### 18.4 Nice to have
 

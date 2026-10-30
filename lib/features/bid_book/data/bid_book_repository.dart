@@ -83,6 +83,8 @@ class BidBookRepository {
   const BidBookRepository(this._api);
   final Api _api;
 
+  Future<Bid> get(int id) async => Bid.fromJson(await _api.one('/bid-book/$id'));
+
   Future<Page<Bid>> list(ListQuery q, {int page = 1}) => _api.page('/bid-book', Bid.fromJson, query: q.toQuery(), page: page);
 
   Future<void> create(Map<String, Object?> body) => _api.post('/bid-book', cleanBody(body));

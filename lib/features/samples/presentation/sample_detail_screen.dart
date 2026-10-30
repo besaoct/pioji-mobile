@@ -1,4 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/application/invalidation.dart';
+import '../../../core/errors/app_failure.dart';
+import '../../../core/router/routes.dart';
+import '../../../core/widgets/buttons.dart';
+import '../../../core/widgets/sheets.dart';
+import '../data/samples_repository.dart';
 
 import '../../../core/design/context_ext.dart';
 import '../../../core/design/tokens.dart';
@@ -11,17 +20,54 @@ import '../../../core/widgets/scaffolds.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../domain/sample.dart';
 
-class SampleDetailScreen extends StatelessWidget {
+class SampleDetailScreen extends ConsumerStatefulWidget {
   const SampleDetailScreen({super.key, required this.sample});
   final Sample? sample;
 
   @override
+  ConsumerState<SampleDetailScreen> createState() => _SampleDetailScreenState();
+}
+
+class _SampleDetailScreenState extends ConsumerState<SampleDetailScreen> {
+  bool _deleting = false;
+
+  Future<void> _delete(Sample s) async {
+    final ok = await confirm(
+      context,
+      title: 'Delete this sample?',
+      body: '${s.title} (${Fmt.invoice(s.invoicePrefix, s.invoiceNo)}) will be removed. This can’t be undone.',
+      action: 'Delete',
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+    setState(() => _deleting = true);
+    try {
+      await ref.read(samplesRepositoryProvider).delete(s.id);
+      if (!mounted) return;
+      ref.invalidate(samplesListProvider);
+      refreshSummaries(ref);
+      context.toast('Sample deleted');
+      context.pop();
+    } on AppFailure catch (f) {
+      if (mounted) context.toast(f.message);
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final s = sample;
+    final s = widget.sample;
     if (s == null) return const MissingItemScreen(what: 'sample');
     final c = context.colors;
     return DetailScaffold(
       title: s.gardenName ?? 'Sample',
+      actions: [
+        LinkButton(
+          label: 'Edit',
+          onPressed: () => context.pushNamed(Routes.sampleEdit, pathParameters: {'id': '${s.id}'}, extra: s),
+        ),
+      ],
       children: [
         AppCard(
           padding: const EdgeInsets.all(AppSpace.lg),
@@ -61,6 +107,7 @@ class SampleDetailScreen extends StatelessWidget {
             if (s.remarks != null) InfoBlock('Remarks', s.remarks!),
           ],
         ),
+        PrimaryButton(label: 'Delete sample', destructive: true, loading: _deleting, onPressed: () => _delete(s)),
       ],
     );
   }

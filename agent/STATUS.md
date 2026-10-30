@@ -1,4 +1,4 @@
-# Status — 29 Oct 2026
+# Status — 30 Oct 2026
 
 ## Built
 
@@ -7,7 +7,7 @@ All screens in the spec exist and compile with zero analyzer issues:
 - Splash, 3-page onboarding, sign in (with session-expired state), Terms and Privacy pages
 - Tab shell with the gradient bottom bar (tablet: side rail)
 - Home: 4 live counts, quick actions, a checklist driven by real counts, recent samples
-- Samples: list (status segments, arrival filter), new sample (2-of-3 weights, duplicate "save anyway"), detail
+- Samples: list (status segments, arrival filter), new and edit sample (2-of-3 weights, duplicate "save anyway"), detail with delete
 - Batches: list, new batch (pick unbatched samples, 48 cap), auto-batch for a date, detail
 - Offer lists: list (date/grade/type filters), new offer (override / re-offer on duplicates), detail
 - Offered today: day switcher, offer/sample tabs, single and multi-select buyer allocation
@@ -16,6 +16,8 @@ All screens in the spec exist and compile with zero analyzer issues:
 - Contracts: list, new contract with repeatable items and live totals, detail
 - Sales register: list, new sale with live amount, detail
 - Ex-factory: status summary tiles, list, CSV export + share, new bill (IGST / CGST+SGST with 5% fill), detail
+- Every detail screen loads by ID (`GET /{module}/{id}`): it shows the list copy at once, refreshes from the API, and works from a deep link
+- Grade pickers load `GET /grades`, falling back to a built-in list
 - More and Settings (theme, version, legal), sign out
 - App ID `com.gitcs.pioji` on iOS and Android; launcher icons (two-leaf mark, light/dark, Android adaptive + monochrome) and native splash
 
@@ -26,12 +28,12 @@ All screens in the spec exist and compile with zero analyzer issues:
 
 ## Blocked on the backend
 
-See `docs/FLUTTER_IMPLEMENTATION.md` §18. In short:
+Route check on 30 Oct 2026. Details in `docs/API_DOCS.md` (status table) and `docs/FLUTTER_IMPLEMENTATION.md` §18.
 
-1. `POST /auth/login` must accept admin accounts. **Nothing works until this is fixed.**
-2. `GET /auth/me`, `POST /auth/logout`.
-3. Lookup lists: `/gardens`, `/buyers`, `/sellers`, `/negotiators`, `/posting-lists`. Until they exist, pickers ask for a numeric ID (buyers fall back to the offered-today list).
-4. `GET/PUT/DELETE /{module}/{id}`: detail screens use the list item; only bid book can be edited.
+1. `POST /auth/login` must accept admin accounts. **Still 401. Nothing works until this is fixed.**
+2. `GET /auth/me` is missing. The app keeps a saved session until any request returns 401.
+3. `GET /negotiators` and `GET /posting-lists` are missing. The negotiator picker asks for an ID; posting lists say they aren't available. (`/gardens`, `/buyers`, `/sellers`, `/grades` and `/auth/logout` exist.)
+4. Edit (`PUT`) is missing for offer lists, batches, courier, contracts, sales and ex-factory; delete is missing for everything except samples. Only samples (edit + delete) and bid book (edit) have those actions in the app.
 5. `APP_DEBUG=false`, JSON 404 for unknown API paths.
 
 ## Not built yet (from the spec)

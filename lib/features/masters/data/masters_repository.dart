@@ -41,6 +41,22 @@ class MastersRepository {
     }
   }
 
+  /// Grade names from `GET /grades`. Items may be strings or `{name|grade}`.
+  Future<List<String>> grades() async {
+    try {
+      Object? node = await _api.getData('/grades', query: const {'per_page': 500});
+      if (node is Map<String, dynamic>) node = node['data'] ?? node['grades'];
+      final list = (node is List ? node : const [])
+          .map((g) => g is Map ? (J.str(g['name']) ?? J.str(g['grade']) ?? J.str(g['code'])) : J.str(g))
+          .whereType<String>()
+          .toSet()
+          .toList();
+      return list.isEmpty ? kTeaGrades : list;
+    } catch (_) {
+      return kTeaGrades;
+    }
+  }
+
   Future<List<MasterItem>> buyers() async {
     final direct = await list('/buyers');
     if (direct.isNotEmpty) return direct;
@@ -76,5 +92,8 @@ final negotiatorsProvider = FutureProvider((ref) => ref.read(mastersRepositoryPr
 final postingListsProvider = FutureProvider((ref) => ref.read(mastersRepositoryProvider).list('/posting-lists'));
 final courierOptionsProvider = FutureProvider((ref) => ref.read(mastersRepositoryProvider).courierOptions());
 
-/// Grades used across the business. Replace with `GET /grades` when it exists.
+final gradesProvider = FutureProvider((ref) => ref.read(mastersRepositoryProvider).grades());
+
+/// Fallback grades, used when `GET /grades` returns nothing, and for the
+/// grade filter on list screens.
 const kTeaGrades = ['BOP', 'BOPSM', 'BP', 'OF', 'PD', 'Dust', 'FOP', 'OP', 'PEKOE'];

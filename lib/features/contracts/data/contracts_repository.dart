@@ -96,6 +96,8 @@ class ContractsRepository {
   const ContractsRepository(this._api);
   final Api _api;
 
+  Future<Contract> get(int id) async => Contract.fromJson(await _api.one('/contracts/$id'));
+
   Future<Page<Contract>> list(ListQuery q, {int page = 1}) =>
       _api.page('/contracts', Contract.fromJson, query: q.toQuery(), page: page);
 

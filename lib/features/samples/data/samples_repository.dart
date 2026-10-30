@@ -12,8 +12,14 @@ class SamplesRepository {
   const SamplesRepository(this._api);
   final Api _api;
 
+  Future<Sample> get(int id) async => Sample.fromJson(await _api.one('/samples/$id'));
+
   Future<Page<Sample>> list(ListQuery q, {int page = 1, int perPage = 20}) =>
       _api.page('/samples', Sample.fromJson, query: q.toQuery(), page: page, perPage: perPage);
+
+  Future<void> update(int id, Map<String, Object?> body) => _api.put('/samples/$id', body);
+
+  Future<void> delete(int id) => _api.delete('/samples/$id');
 
   Future<Sample?> create(Map<String, Object?> body) async {
     final data = await _api.post('/samples', cleanBody(body));

@@ -21,6 +21,7 @@ import '../../features/home/presentation/home_screen.dart';
 import '../../features/offer_lists/data/offer_lists_repository.dart';
 import '../../features/offer_lists/presentation/offer_lists_screens.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/samples/data/samples_repository.dart';
 import '../../features/samples/domain/sample.dart';
 import '../../features/samples/presentation/sample_detail_screen.dart';
 import '../../features/samples/presentation/sample_form_screen.dart';
@@ -29,6 +30,7 @@ import '../../features/sales_register/data/sales_repository.dart';
 import '../../features/sales_register/presentation/sales_screens.dart';
 import '../../features/settings/presentation/more_screen.dart';
 import '../storage/prefs.dart';
+import '../widgets/detail_loader.dart';
 import 'routes.dart';
 import 'shell_scaffold.dart';
 
@@ -43,6 +45,23 @@ GoRoute _top(String path, String name, Widget Function(GoRouterState s) child) =
     );
 
 T? _extra<T>(GoRouterState s) => s.extra is T ? s.extra as T : null;
+
+/// Detail route body: shows the list's copy at once, refreshes from the API.
+Widget _detail<T>(
+  GoRouterState s,
+  String what,
+  Future<T> Function(WidgetRef ref, int id) fetch,
+  Widget Function(T item) builder,
+) {
+  return DetailLoader<T>(
+    key: ValueKey(s.uri.toString()),
+    id: int.tryParse(s.pathParameters['id'] ?? ''),
+    initial: _extra<T>(s),
+    fetch: fetch,
+    builder: builder,
+    what: what,
+  );
+}
 
 class _RouterRefresh extends ChangeNotifier {
   void ping() => notifyListeners();
@@ -98,9 +117,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 GoRoute(path: 'batches', name: Routes.batches, builder: (_, _) => const BatchesListScreen(), routes: [
                   _top('new', Routes.batchNew, (_) => const BatchFormScreen()),
                   _top('auto', Routes.batchAuto, (_) => const AutoBatchScreen()),
-                  GoRoute(path: ':id', name: Routes.batchDetail, builder: (_, s) => BatchDetailScreen(batch: _extra<Batch>(s))),
+                  GoRoute(path: ':id', name: Routes.batchDetail, builder: (_, s) => _detail<Batch>(s, 'batch', (r, id) => r.read(batchesRepositoryProvider).get(id), (x) => BatchDetailScreen(batch: x))),
                 ]),
-                GoRoute(path: ':id', name: Routes.sampleDetail, builder: (_, s) => SampleDetailScreen(sample: _extra<Sample>(s))),
+                GoRoute(path: ':id', name: Routes.sampleDetail, routes: [
+                  _top('edit', Routes.sampleEdit, (s) => SampleFormScreen(editing: _extra<Sample>(s))),
+                ], builder: (_, s) => _detail<Sample>(s, 'sample', (r, id) => r.read(samplesRepositoryProvider).get(id), (x) => SampleDetailScreen(sample: x))),
               ],
             ),
           ]),
@@ -112,7 +133,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               routes: [
                 _top('new', Routes.offerNew, (_) => const OfferFormScreen()),
                 GoRoute(path: 'today', name: Routes.offeredToday, builder: (_, _) => const OfferedTodayScreen()),
-                GoRoute(path: ':id', name: Routes.offerDetail, builder: (_, s) => OfferDetailScreen(offer: _extra<OfferList>(s))),
+                GoRoute(path: ':id', name: Routes.offerDetail, builder: (_, s) => _detail<OfferList>(s, 'offer', (r, id) => r.read(offerListsRepositoryProvider).get(id), (x) => OfferDetailScreen(offer: x))),
               ],
             ),
           ]),
@@ -126,7 +147,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               builder: (_, _) => const BidBookScreen(),
               routes: [
                 _top('new', Routes.bidNew, (_) => const BidFormScreen()),
-                GoRoute(path: ':id', name: Routes.bidDetail, builder: (_, s) => BidDetailScreen(bid: _extra<Bid>(s)), routes: [
+                GoRoute(path: ':id', name: Routes.bidDetail, builder: (_, s) => _detail<Bid>(s, 'lot', (r, id) => r.read(bidBookRepositoryProvider).get(id), (x) => BidDetailScreen(bid: x)), routes: [
                   _top('edit', Routes.bidEdit, (s) => BidFormScreen(editing: _extra<Bid>(s))),
                 ]),
               ],
@@ -140,19 +161,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               routes: [
                 GoRoute(path: 'courier', name: Routes.courier, builder: (_, _) => const CourierListScreen(), routes: [
                   _top('new', Routes.courierNew, (_) => const CourierFormScreen()),
-                  GoRoute(path: ':id', name: Routes.courierDetail, builder: (_, s) => CourierDetailScreen(entry: _extra<CourierEntry>(s))),
+                  GoRoute(path: ':id', name: Routes.courierDetail, builder: (_, s) => _detail<CourierEntry>(s, 'courier entry', (r, id) => r.read(courierRepositoryProvider).get(id), (x) => CourierDetailScreen(entry: x))),
                 ]),
                 GoRoute(path: 'contracts', name: Routes.contracts, builder: (_, _) => const ContractsListScreen(), routes: [
                   _top('new', Routes.contractNew, (_) => const ContractFormScreen()),
-                  GoRoute(path: ':id', name: Routes.contractDetail, builder: (_, s) => ContractDetailScreen(contract: _extra<Contract>(s))),
+                  GoRoute(path: ':id', name: Routes.contractDetail, builder: (_, s) => _detail<Contract>(s, 'contract', (r, id) => r.read(contractsRepositoryProvider).get(id), (x) => ContractDetailScreen(contract: x))),
                 ]),
                 GoRoute(path: 'sales', name: Routes.sales, builder: (_, _) => const SalesListScreen(), routes: [
                   _top('new', Routes.salesNew, (_) => const SalesFormScreen()),
-                  GoRoute(path: ':id', name: Routes.salesDetail, builder: (_, s) => SalesDetailScreen(entry: _extra<SaleEntry>(s))),
+                  GoRoute(path: ':id', name: Routes.salesDetail, builder: (_, s) => _detail<SaleEntry>(s, 'sale', (r, id) => r.read(salesRepositoryProvider).get(id), (x) => SalesDetailScreen(entry: x))),
                 ]),
                 GoRoute(path: 'ex-factory', name: Routes.exFactory, builder: (_, _) => const ExFactoryListScreen(), routes: [
                   _top('new', Routes.exFactoryNew, (_) => const ExFactoryFormScreen()),
-                  GoRoute(path: ':id', name: Routes.exFactoryDetail, builder: (_, s) => ExFactoryDetailScreen(bill: _extra<ExFactoryBill>(s))),
+                  GoRoute(path: ':id', name: Routes.exFactoryDetail, builder: (_, s) => _detail<ExFactoryBill>(s, 'bill', (r, id) => r.read(exFactoryRepositoryProvider).get(id), (x) => ExFactoryDetailScreen(bill: x))),
                 ]),
                 GoRoute(path: 'settings', name: Routes.settings, builder: (_, _) => const SettingsScreen()),
               ],

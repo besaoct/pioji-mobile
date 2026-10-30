@@ -31,6 +31,22 @@ class Api {
     return unwrap(res.data);
   }
 
+  /// One record from `GET /{module}/{id}`. Accepts the record itself or a
+  /// wrapper like `{sample: {...}}` inside the envelope.
+  Future<Map<String, dynamic>> one(String path) async {
+    final data = J.map(await getData(path));
+    if (data == null) throw const NotFoundFailure();
+    if (data.containsKey('id')) return data;
+    for (final v in data.values) {
+      if (v is Map<String, dynamic> && v.containsKey('id')) return v;
+    }
+    throw const NotFoundFailure();
+  }
+
+  Future<void> delete(String path) async {
+    await _guard(() => dio.delete<dynamic>(path));
+  }
+
   Future<Object?> post(String path, Object body) async {
     final res = await _guard(() => dio.post<dynamic>(
           path,
