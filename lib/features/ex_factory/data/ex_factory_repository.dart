@@ -79,7 +79,7 @@ class ExFactoryBill {
         mark: J.str(j['mark']),
         invoicePrefix: J.str(j['invoice_prefix']),
         invoiceNo: J.str(j['invoice_no']),
-        supplierName: J.nested(j, 'supplier_name', 'supplier'),
+        supplierName: J.nested(j, 'supplier_name', 'supplier', 'seller_name') ?? J.nested(j, 'seller_name', 'seller', 'seller_name'),
         pkgs: J.integer(j['pkgs']),
         nett: J.dbl(j['nett']),
         taxableValue: J.dbl(j['taxable_value']),

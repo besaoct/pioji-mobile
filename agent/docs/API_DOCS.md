@@ -5,9 +5,9 @@
 | **Base URL** | `https://gold-sardine-283964.hostingersite.com/api/v1` |
 | **Auth** | Laravel Sanctum bearer token |
 | **Format** | JSON (`multipart/form-data` only for photo uploads) |
-| **Last verified** | 2026-10-30 (routes only; admin login still rejected) |
+| **Last verified** | 2026-10-31 (signed in as admin; GETs and validation only) |
 
-> ⚠️ **Blocking issue — fix on the backend first.** The app is meant to sign in with the **admin** account, but `POST /auth/login` currently only checks the regular `users` table. The admin login (`admin@example.com`) works on `/admin/login` but returns `401 "The provided credentials are incorrect."` from the API. The API login (and the `auth:sanctum` guard on every route) needs to accept admin accounts before the app can call anything. See [Backend issues](#backend-issues-found-during-verification).
+> ⚠️ **Server bugs (2026-10-31).** Admin login now works. Three endpoints fail with 500 and expose SQL/stack details: `GET /sales-register`, `GET /sales-register/{id}` and `GET /samples/{id}`. See [Verified responses](#verified-responses-2026-10-31).
 
 ---
 
@@ -24,7 +24,7 @@
 9. [Contracts](#7-contracts)
 10. [Sales Register](#8-sales-register)
 11. [Ex-Factory Register](#9-ex-factory-reconciliation-register)
-12. [Endpoint status table](#endpoint-status-table)
+12. [Endpoint status table](#endpoint-status-table) and [verified responses](#verified-responses-2026-10-31)
 13. [Flutter client setup](#flutter-client-setup)
 14. [Backend issues](#backend-issues-found-during-verification)
 
@@ -56,7 +56,20 @@ Always send `Accept: application/json`. Without it Laravel returns HTML redirect
 
 ### Pagination
 
-List endpoints accept `per_page` (default `20`) and `page`. Results come back inside `data`.
+List endpoints accept `per_page` (default `20`) and `page`. Items come back under a named key next to a `pagination` object:
+
+```json
+{
+  "success": true,
+  "message": "…",
+  "data": {
+    "samples": [ { "id": 41, … } ],
+    "pagination": { "current_page": 1, "last_page": 14, "per_page": 2, "total": 28, "has_more_pages": true }
+  }
+}
+```
+
+The key differs per endpoint (see [Verified responses](#verified-responses-2026-10-31)). `GET /sellers` is the exception: it returns Laravel's paginator (`data.data`, `data.current_page`, …). The app's `Page.parse` handles both.
 
 ### Response envelope
 
@@ -132,11 +145,26 @@ Exchanges email + password for a Sanctum token.
 }
 ```
 
-**Success** — returns a `token` string. Store it securely (`flutter_secure_storage`) and send it as `Authorization: Bearer <token>`.
+**Success** — `200` *(verified 2026-10-31)*
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": { "id": 6, "name": "Super Admin", "email": "admin@example.com", "phone": null, "role": "supervisor", "role_text": "Supervisor", "department": "Administration", "permissions": ["samples.view", "…"], "status": "…", "status_text": "…", "last_login_at": "…" },
+    "token": "<sanctum token>",
+    "token_type": "Bearer",
+    "abilities": ["…"]
+  }
+}
+```
+
+Store `data.token` securely (`flutter_secure_storage`) and send it as `Authorization: Bearer <token>`. `GET /auth/me` returns the same `data.user`.
 
 **Errors (verified)**
 - Empty body → `422` with `email`, `password`, `device_name` required.
-- Wrong credentials **(currently also admin credentials)** → `401 "The provided credentials are incorrect."`
+- Wrong credentials → `401 "The provided credentials are incorrect."`
 
 ---
 
@@ -617,62 +645,103 @@ The bill is matched to a Sales Register entry by mark + invoice. Its `register_s
 
 ## Endpoint status table
 
-Checked live on 2026-10-29 and again on 2026-10-30. Every documented protected route exists and returns `401 Unauthenticated` without a token. Response bodies **after** login are not verified yet, because no API token could be obtained (see blocking issue).
+Routes checked on 2026-10-29/30; responses checked signed in on 2026-10-31. ✅ = real response seen and parsed by the app. "422 only" = sent with an empty body to avoid creating data, so only validation was seen.
 
 | # | Method | Path | Route exists | Auth enforced | Response shape verified |
 |---|---|---|---|---|---|
 | — | POST | `/auth/login` | ✅ | n/a | ✅ errors only (422/401) |
-| 1.1 | GET | `/offer-lists` | ✅ | ✅ | ⏳ |
-| 1.2 | POST | `/offer-lists` | ✅ | ✅ | ⏳ |
-| 2.1 | GET | `/samples` | ✅ | ✅ | ⏳ |
-| 2.2 | POST | `/samples` | ✅ | ✅ | ⏳ |
-| 3.1 | GET | `/batches` | ✅ | ✅ | ⏳ |
-| 3.2 | POST | `/batches` | ✅ | ✅ | ⏳ |
-| 3.3 | POST | `/batches/create-for-date` | ✅ | ✅ | ⏳ |
-| 3.4 | GET | `/batches/unbatched-samples` | ✅ | ✅ | ⏳ |
-| 4.1 | GET | `/courier-entries` | ✅ | ✅ | ⏳ |
-| 4.2 | POST | `/courier-entries` | ✅ | ✅ | ⏳ |
-| 4.3 | GET | `/courier-entries/buyer-address/{id}` | ✅ | ✅ | ⏳ |
-| 4.4 | GET | `/courier-entries/services` | ✅ | ✅ | ⏳ |
-| 5.1 | GET | `/samples-offered-today` | ✅ | ✅ | ⏳ |
-| 5.2 | POST | `/samples-offered-today/allocate-buyers` | ✅ | ✅ | ⏳ |
-| 5.3 | POST | `/samples-offered-today/bulk-allocate-buyers` | ✅ | ✅ | ⏳ |
-| 6.1 | GET | `/bid-book` | ✅ | ✅ | ⏳ |
-| 6.2 | POST | `/bid-book` | ✅ | ✅ | ⏳ |
-| 6.3 | PUT | `/bid-book/{id}` | ✅ | ✅ | ⏳ |
-| 7.1 | GET | `/contracts` | ✅ | ✅ | ⏳ |
-| 7.2 | POST | `/contracts` | ✅ | ✅ | ⏳ |
-| 8.1 | GET | `/sales-register` | ✅ | ✅ | ⏳ |
-| 8.2 | POST | `/sales-register` | ✅ | ✅ | ⏳ |
-| 9.1 | GET | `/ex-factory` | ✅ | ✅ | ⏳ |
-| 9.2 | GET | `/ex-factory/export` | ✅ | ✅ | ⏳ |
-| 9.3 | POST | `/ex-factory` | ✅ | ✅ | ⏳ |
+| 1.1 | GET | `/offer-lists` | ✅ | ✅ | ✅ |
+| 1.2 | POST | `/offer-lists` | ✅ | ✅ | 422 only |
+| 2.1 | GET | `/samples` | ✅ | ✅ | ✅ |
+| 2.2 | POST | `/samples` | ✅ | ✅ | not tested (all fields optional, would create data) |
+| 3.1 | GET | `/batches` | ✅ | ✅ | ✅ |
+| 3.2 | POST | `/batches` | ✅ | ✅ | not tested (all fields optional, would create data) |
+| 3.3 | POST | `/batches/create-for-date` | ✅ | ✅ | not tested (all fields optional, would create data) |
+| 3.4 | GET | `/batches/unbatched-samples` | ✅ | ✅ | ✅ |
+| 4.1 | GET | `/courier-entries` | ✅ | ✅ | ✅ |
+| 4.2 | POST | `/courier-entries` | ✅ | ✅ | 422 only |
+| 4.3 | GET | `/courier-entries/buyer-address/{id}` | ✅ | ✅ | ✅ |
+| 4.4 | GET | `/courier-entries/services` | ✅ | ✅ | ✅ |
+| 5.1 | GET | `/samples-offered-today` | ✅ | ✅ | ✅ |
+| 5.2 | POST | `/samples-offered-today/allocate-buyers` | ✅ | ✅ | 422 only |
+| 5.3 | POST | `/samples-offered-today/bulk-allocate-buyers` | ✅ | ✅ | 422 only |
+| 6.1 | GET | `/bid-book` | ✅ | ✅ | ✅ |
+| 6.2 | POST | `/bid-book` | ✅ | ✅ | 422 only |
+| 6.3 | PUT | `/bid-book/{id}` | ✅ | ✅ | not tested (would change data) |
+| 7.1 | GET | `/contracts` | ✅ | ✅ | ✅ |
+| 7.2 | POST | `/contracts` | ✅ | ✅ | 422 only |
+| 8.1 | GET | `/sales-register` | ✅ | ✅ | ❌ 500 (server bug) |
+| 8.2 | POST | `/sales-register` | ✅ | ✅ | 422 only |
+| 9.1 | GET | `/ex-factory` | ✅ | ✅ | ✅ |
+| 9.2 | GET | `/ex-factory/export` | ✅ | ✅ | ✅ |
+| 9.3 | POST | `/ex-factory` | ✅ | ✅ | 422 only |
 
-### Undocumented routes found on the server (2026-10-30)
+## Verified responses (2026-10-31)
 
-These aren't in the original guide but exist and require a token. Field names and response shapes are not verified.
+Signed in as admin. Only GET requests, plus create requests with an empty body (all returned 422; nothing was created). Not tested: creating samples or batches, auto-batch, allocation with real data, every `PUT` and `DELETE`, logout.
 
-| Method | Path | Notes |
-|---|---|---|
-| POST | `/auth/logout` | Revokes the current token |
-| GET | `/gardens` | Garden list for pickers |
-| GET | `/buyers` | Buyer list for pickers |
-| GET | `/sellers` | Seller / supplier list for pickers |
-| GET | `/grades` | Grade list for pickers |
-| GET | `/{module}/{id}` | One record, for all 8 modules: `offer-lists`, `samples`, `batches`, `courier-entries`, `bid-book`, `contracts`, `sales-register`, `ex-factory` |
-| PUT | `/samples/{id}` | Update a sample (same body as create) |
-| DELETE | `/samples/{id}` | Delete a sample |
+### List endpoints
 
-### Missing routes the app needs
-
-| Method | Path | What happens today | Needed for |
+| Endpoint | Status | Items key in `data` | Notable item fields |
 |---|---|---|---|
-| GET | `/auth/me` (also tried `/auth/user`, `/user`, `/me`) | HTML 404 page, status 200 | Validating a stored login and showing the user's name |
-| GET | `/negotiators` (also tried `/users`) | HTML 404 page, status 200 | Bid book negotiator picker |
-| GET | `/posting-lists` | HTML 404 page, status 200 | Courier posting lists |
-| PUT | `/{id}` on offer lists, batches, courier, contracts, sales, ex-factory | 405 Method Not Allowed | Editing those records |
-| DELETE | `/{id}` on every module except samples | 405 Method Not Allowed | Deleting records |
-| GET | `/dashboard/summary` (optional) | HTML 404 page, status 200 | Loading Home's counts in one call |
+| `GET /offer-lists` | ✅ 200 | `offer_lists` | `garden_name`, `garden` (object), `grade` (text), `inv_pretx`, `inv_no`, `pkgs`, `nett`, `ttl_kgs`, `price`, `date`, `buyer` |
+| `GET /samples` | ✅ 200 | `samples` | `garden_name`, `grade` **object** `{code, tea_type}`, `invoice_prefix` **object** `{code, invoice_type}`, `inv_no`, `pkgs`, `nett`, `total_kgs`, `status`, `batch_id` **text** (e.g. `BATCH20261030001-06`) |
+| `GET /batches` | ✅ 200 | `batches` | `batch_number`, `batch_date`, `total_samples`, `max_samples`, `samples_count`, `status`, `remarks` |
+| `GET /courier-entries` | ✅ 200 | `entries` | `entry_number`, `tracking_number`, `courier_name`, `buyer_name`, `buyer` (object), `courier_service` (object, `company_name`), `pickup_date`, `pickup_day`, `is_auc`, `is_pvt`, `weight` |
+| `GET /bid-book` | ✅ 200 | `lots` | `garden_name`, `grade`, `invoice_number`, `packages`, `net_weight`, prices, `status` (`OK-BID HOLD` etc.), `holder_status`, `buyer` / `negotiator` (objects or null) |
+| `GET /contracts` | ✅ 200 | `contracts` | `contract_number`, `contract_title`, dates, `status`, `seller` (object, `seller_name`), `contract_items[]` (`tea_grade`, `price_per_kg`, `quantity`, `currency`) |
+| `GET /ex-factory` | ✅ 200 | `bills` (+ `metrics`) | `metrics`: `total_bills`, `total_pkgs`, `total_kgs`, `total_taxable`, `total_bill_value`, `total_payable`, `total_paid`, `matched_count`, `mismatch_count`, `unregistered_count` |
+| `GET /sales-register` | ❌ **500** | — | See server bugs |
+| `GET /gardens` | ✅ 200 | `gardens` (2,183 total) | `garden_name`, `city`, aliases. Use `search` + paging, never load all |
+| `GET /buyers` | ✅ 200 | `buyers` | `buyer_name`, `buyer_type`, `contact_person`, `email`, `phone` |
+| `GET /sellers` | ✅ 200 | Laravel paginator: `data.data` | `seller_name`, `tea_estate_name`, `city` |
+| `GET /grades` | ✅ 200 | `grades` (219 total) | `grade_code`, `grade_name`, `category` |
+| `GET /posting-lists` | ✅ 200 | `posting_lists` (+ `statuses`) | `name`, `list_number`, `list_date`, `status`, `items_count` |
+| `GET /negotiators` | ✅ 200 | `data` is a plain list | `id`, `name`, `email`, `role`, `department` |
+
+Filters verified: `search`, `status`, `tab` (bid book), `date_from` / `date_to`, `register_status`.
+
+### Other endpoints
+
+| Endpoint | Status | Shape |
+|---|---|---|
+| `GET /auth/me` | ✅ 200 | `data.user` (same as login) |
+| `GET /batches/unbatched-samples?date=` | ✅ 200 | `data` is a list of samples |
+| `GET /courier-entries/services` | ✅ 200 | `data.courier_services[]` (`company_name`), `data.courier_addresses[]` (`address_title`, `address_line_1`, `city`) |
+| `GET /courier-entries/buyer-address/{id}` | ✅ 200 | `data`: `buyer_id`, `name`, `address`, `phone`, `whatsapp` |
+| `GET /samples-offered-today?date=` | ✅ 200 | `data`: `date`, `total_offer_lists`, `total_samples`, `offer_lists[]`, `samples[]` (each with `assigned_buyers[]` of buyer objects), `available_buyers[]` (`buyer_name`) |
+| `GET /ex-factory/export` | ✅ 200 | `text/csv` file |
+| `GET /offer-lists/{id}`, `/batches/{id}`, `/courier-entries/{id}`, `/bid-book/{id}`, `/contracts/{id}` | ✅ 200 | `data` is the record |
+| `GET /ex-factory/{id}` | ✅ 404 | No bills exist yet, so not fully verified |
+| `GET /samples/{id}` | ❌ **500** | See server bugs |
+| `GET /sales-register/{id}` | ❌ **500** | See server bugs |
+
+### Required fields (from 422 responses)
+
+| Endpoint | Required |
+|---|---|
+| `POST /offer-lists` | `date`, `garden_id`, `inv_no` |
+| `POST /courier-entries` | `tracking_number`, `buyer_id` (or custom address), `courier_name` when no `courier_service_id` |
+| `POST /bid-book` | `garden_name`, `grade`, `invoice_number`, `packages`, `net_weight`, `status` |
+| `POST /contracts`, `/sales-register`, `/ex-factory`, `/samples-offered-today/*` | As documented above (all returned 422 for an empty body) |
+
+### Server bugs
+
+| # | Endpoint | Error | Note |
+|---|---|---|---|
+| 1 | `GET /sales-register` | 500 `Array to string conversion` while **inserting** into `sales_registers` ("Auto-created on sample dispatch") | A GET must not write. The insert fails, so the whole list is unusable. The message also leaks the database name, host and full SQL |
+| 2 | `GET /sales-register/{id}` | 500 `Call to undefined relationship [garden] on model [App\Models\SalesRegister]` | Remove `garden` from the eager loads or add the relation |
+| 3 | `GET /samples/{id}` | 500 `Call to undefined method App\Services\SampleService::getSampleDetailsForMobile()` | Missing service method |
+| 4 | Errors in general | Exception text returned to clients | Set `APP_DEBUG=false`; return a generic message |
+
+### Still missing
+
+| Method | Path | Today |
+|---|---|---|
+| PUT | `/{id}` on offer lists, batches, courier, contracts, sales, ex-factory | 405 |
+| DELETE | `/{id}` on every module except samples | 405 |
+| GET | `/dashboard/summary` (optional) | HTML 404 page, status 200 |
+| — | Unknown `/api/v1/*` paths | HTML 404 page with status 200 instead of JSON 404 |
 
 ---
 
@@ -795,7 +864,7 @@ await api.dio.download(
 
 | # | Severity | Issue | Fix |
 |---|---|---|---|
-| 1 | **Blocker** | `POST /auth/login` rejects admin credentials that work on `/admin/login`. The API checks the `users` table/guard, but admins are a separate guard. | Let the API login authenticate admins: check the admin model, or make `Admin` use `HasApiTokens` and issue the token from it. Make sure `auth:sanctum` resolves admin tokens too. |
+| 1 | ~~Blocker~~ Fixed 2026-10-31 | `POST /auth/login` rejected admin credentials that work on `/admin/login`. The API checks the `users` table/guard, but admins are a separate guard. | Let the API login authenticate admins: check the admin model, or make `Admin` use `HasApiTokens` and issue the token from it. Make sure `auth:sanctum` resolves admin tokens too. |
 | 2 | High | `APP_DEBUG` is on in production. Errors return the exception class and trace (e.g. calling `POST /api/v1/login`). | Set `APP_DEBUG=false` in `.env`, then run `php artisan config:cache`. |
 | 3 | Medium | Unknown `/api/v1/*` paths return **HTTP 200 with an HTML 404 page** instead of a JSON 404. The app sees "success" and then fails parsing. | Add an API fallback: `Route::fallback(fn () => response()->json(['success' => false, 'message' => 'Not found'], 404));` in `routes/api.php`. Exclude `api/*` from the web catch-all route. |
 | 4 | Low | GET requests that carry a body get `403` from the hosting firewall. | Client rule: no body on GET (already covered above). |

@@ -32,7 +32,7 @@ class ContractItem {
   double get value => (pricePerKg ?? 0) * (quantity ?? 0);
 
   factory ContractItem.fromJson(Map<String, dynamic> j) => ContractItem(
-        grade: J.str(j['tea_grade']),
+        grade: J.str(j['tea_grade']) ?? J.str(j['tea_grade_description']),
         pricePerKg: J.dbl(j['price_per_kg']),
         quantity: J.dbl(j['quantity']),
         currency: J.str(j['currency']) ?? 'INR',
@@ -77,8 +77,8 @@ class Contract {
         id: J.intOr(j['id'], 0),
         title: J.str(j['contract_title']) ?? 'Contract #${j['id']}',
         number: J.str(j['contract_number']),
-        sellerName: J.nested(j, 'seller_name', 'seller'),
-        buyerName: J.nested(j, 'buyer_name', 'buyer'),
+        sellerName: J.nested(j, 'seller_name', 'seller', 'seller_name'),
+        buyerName: J.nested(j, 'buyer_name', 'buyer', 'buyer_name'),
         effective: J.date(j['effective_date']),
         expiry: J.date(j['expiry_date']),
         promptDays: J.integer(j['prompt_days']),

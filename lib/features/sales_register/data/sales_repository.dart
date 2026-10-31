@@ -63,7 +63,7 @@ class SaleEntry {
 
   factory SaleEntry.fromJson(Map<String, dynamic> j) => SaleEntry(
         id: J.intOr(j['id'], 0),
-        buyerName: J.nested(j, 'buyer_name', 'buyer'),
+        buyerName: J.nested(j, 'buyer_name', 'buyer', 'buyer_name'),
         grade: J.str(j['tea_grade']),
         rate: J.dbl(j['rate_per_kg']),
         pkgs: J.integer(j['pkgs']),

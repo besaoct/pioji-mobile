@@ -1094,30 +1094,30 @@ No secrets in the repo. `env/*.json` files hold URLs only.
 
 ## 18. Backend requirements before launch
 
-Route check on 30 Oct 2026 (without a token: an existing route answers `401`, a missing one returns the HTML 404 page or `405`). Build against what exists; add each action as its endpoint lands.
+Checked signed in as admin on 31 Oct 2026. Full results: `API_DOCS.md` → Verified responses.
 
-### 18.1 Blockers
+### 18.1 Blockers and bugs
 
 | # | Need | State |
 |---|---|---|
-| 1 | **Admin accounts accepted by `POST /auth/login`** | **Still failing (401).** Nothing else can be used until this is fixed |
-| 2 | `GET /auth/me` | **Missing.** The app keeps a stored session until a request returns 401 |
-| 3 | `POST /auth/logout` | Exists. The app calls it on sign out |
-| 4 | `APP_DEBUG=false` in production | Still on |
-| 5 | JSON 404 for unknown `/api/v1/*` paths | Still 200 + HTML |
+| 1 | Admin accounts accepted by `POST /auth/login` | ✅ Fixed |
+| 2 | `GET /auth/me` | ✅ Exists |
+| 3 | `POST /auth/logout` | Exists (not called during testing) |
+| 4 | **`GET /sales-register` returns 500** (it tries to insert a record and fails) | ❌ Sales register list unusable |
+| 5 | **`GET /sales-register/{id}` and `GET /samples/{id}` return 500** | ❌ The app falls back to the list copy for these two detail screens |
+| 6 | `APP_DEBUG=false` in production | ❌ Still on: errors return SQL and class names |
+| 7 | JSON 404 for unknown `/api/v1/*` paths | ❌ Still 200 + HTML |
 
 ### 18.2 Master data (for pickers)
 
 | Endpoint | State | Used by |
 |---|---|---|
-| `GET /gardens` | Exists | Offer list, sample |
-| `GET /buyers` | Exists | Courier, sales, contracts, bid book |
-| `GET /sellers` | Exists | Contracts, ex-factory |
-| `GET /grades` | Exists | Every grade picker (falls back to a built-in list) |
-| `GET /negotiators` | **Missing** (`/users` too) | Bid book. The picker asks for an ID meanwhile |
-| `GET /posting-lists` | **Missing** | Courier entry. The picker says it isn't available |
-
-Each should support `search` and return `id` + display name at minimum. Response shapes are unverified until login works.
+| `GET /gardens` | ✅ 2,183 records; the picker searches the server | Offer list, sample |
+| `GET /buyers` | ✅ | Courier, sales, contracts, bid book |
+| `GET /sellers` | ✅ (Laravel paginator shape) | Contracts, ex-factory |
+| `GET /grades` | ✅ 219 records; loaded page by page | Every grade picker |
+| `GET /negotiators` | ✅ | Bid book |
+| `GET /posting-lists` | ✅ | Courier entry |
 
 ### 18.3 Detail, edit and delete
 

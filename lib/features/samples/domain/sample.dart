@@ -36,7 +36,7 @@ class Sample {
     this.status = SampleStatus.unknown,
     this.statusRaw,
     this.remarks,
-    this.batchId,
+    this.batchRef,
   });
 
   final int id;
@@ -53,7 +53,8 @@ class Sample {
   final SampleStatus status;
   final String? statusRaw;
   final String? remarks;
-  final int? batchId;
+  /// Batch reference, e.g. `BATCH20260904001-01` (the API sends text, not an id).
+  final String? batchRef;
 
   String get title => [gardenName ?? 'Garden #${gardenId ?? '–'}', ?grade].join(' · ');
   String get statusLabel => status == SampleStatus.unknown ? (statusRaw ?? 'Unknown') : status.label;
@@ -62,17 +63,17 @@ class Sample {
         id: J.intOr(j['id'], 0),
         arrivalDate: J.date(j['arrival_date']),
         gardenId: J.integer(j['garden_id']),
-        gardenName: J.nested(j, 'garden_name', 'garden'),
-        grade: J.str(j['grade']),
-        invoicePrefix: J.str(j['invoice_prefix']),
+        gardenName: J.nested(j, 'garden_name', 'garden', 'garden_name'),
+        grade: J.code(j['grade']),
+        invoicePrefix: J.code(j['invoice_prefix']),
         invoiceNo: J.str(j['inv_no']) ?? J.str(j['invoice_no']),
-        packages: J.integer(j['packages'] ?? j['pkgs']),
-        weight: J.dbl(j['weight'] ?? j['nett']),
+        packages: J.integer(j['pkgs'] ?? j['packages']),
+        weight: J.dbl(j['nett'] ?? j['weight_per_sample'] ?? j['weight']),
         totalKgs: J.dbl(j['total_kgs']),
         sampleType: J.str(j['sample_type']),
         status: SampleStatus.parse(j['status']),
         statusRaw: J.str(j['status']),
         remarks: J.str(j['remarks']),
-        batchId: J.integer(j['batch_id']),
+        batchRef: J.str(j['batch_id']),
       );
 }

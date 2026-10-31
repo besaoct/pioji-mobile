@@ -103,7 +103,7 @@ class _SampleDetailScreenState extends ConsumerState<SampleDetailScreen> {
           children: [
             InfoRow('Sample type', s.sampleType),
             InfoRow('Grade', s.grade),
-            InfoRow('Batch', s.batchId == null ? 'Not batched' : '#${s.batchId}'),
+            InfoRow('Batch', s.batchRef ?? 'Not batched'),
             if (s.remarks != null) InfoBlock('Remarks', s.remarks!),
           ],
         ),

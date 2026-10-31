@@ -31,11 +31,11 @@ class Batch {
         .toList();
     return Batch(
       id: J.intOr(j['id'], 0),
-      name: J.str(j['batch_name']) ?? J.str(j['name']) ?? 'Batch #${j['id']}',
+      name: J.str(j['batch_number']) ?? J.str(j['batch_name']) ?? J.str(j['name']) ?? 'Batch #${j['id']}',
       date: J.date(j['batch_date'] ?? j['date']),
       open: (J.str(j['status']) ?? 'open') == 'open',
-      notes: J.str(j['notes']),
-      sampleCount: J.integer(j['samples_count'] ?? j['sample_count']),
+      notes: J.str(j['remarks']) ?? J.str(j['notes']),
+      sampleCount: J.integer(j['samples_count'] ?? j['total_samples']),
       samples: samples,
     );
   }

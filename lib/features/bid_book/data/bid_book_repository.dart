@@ -61,7 +61,7 @@ class Bid {
 
   factory Bid.fromJson(Map<String, dynamic> j) => Bid(
         id: J.intOr(j['id'], 0),
-        gardenName: J.str(j['garden_name']) ?? J.str(J.map(j['garden'])?['name']) ?? '–',
+        gardenName: J.nested(j, 'garden_name', 'garden', 'garden_name') ?? '–',
         grade: J.str(j['grade']) ?? '–',
         invoiceNumber: J.str(j['invoice_number']) ?? '–',
         packages: J.integer(j['packages']),
@@ -72,7 +72,7 @@ class Bid {
         pencil: J.dbl(j['pencil_price']),
         status: BidStatus.parse(j['status']),
         buyerId: J.integer(j['buyer_id']),
-        buyerName: J.nested(j, 'buyer_name', 'buyer'),
+        buyerName: J.nested(j, 'buyer_name', 'buyer', 'buyer_name'),
         negotiatorId: J.integer(j['negotiator_id']),
         negotiatorName: J.nested(j, 'negotiator_name', 'negotiator'),
         remarks: J.str(j['remarks']),

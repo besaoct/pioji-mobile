@@ -1,4 +1,4 @@
-# Status — 30 Oct 2026
+# Status — 31 Oct 2026
 
 ## Built
 
@@ -21,20 +21,24 @@ All screens in the spec exist and compile with zero analyzer issues:
 - More and Settings (theme, version, legal), sign out
 - App ID `com.gitcs.pioji` on iOS and Android; launcher icons (two-leaf mark, light/dark, Android adaptive + monochrome) and native splash
 
+## Verified
+
+On 31 Oct 2026, signed in as admin: every list, lookup and detail response was fetched and run through the app's parsers (`test/api_parsing_test.dart`, which needs `API_FIXTURES` pointing at saved responses). All 11 parser tests pass.
+
 ## Not verified
 
-- **Every API response shape.** The API rejects the admin login (401), so no authenticated call has been made. Models parse defensively, but field names may need adjusting once real responses are seen. Update `docs/API_DOCS.md` with real samples when login works.
-- The app has not been run on a device or simulator by an agent; only `flutter analyze` and a simulator build were run.
+- Creating, editing and deleting records (only empty-body validation was tried, to avoid writing data).
+- Allocation, auto-batch, logout and photo upload against the live server.
+- The app has not been run on a device or simulator by an agent; only `flutter analyze`, the parser tests and a simulator build.
 
 ## Blocked on the backend
 
-Route check on 30 Oct 2026. Details in `docs/API_DOCS.md` (status table) and `docs/FLUTTER_IMPLEMENTATION.md` §18.
+Details in `docs/API_DOCS.md` → Verified responses → Server bugs.
 
-1. `POST /auth/login` must accept admin accounts. **Still 401. Nothing works until this is fixed.**
-2. `GET /auth/me` is missing. The app keeps a saved session until any request returns 401.
-3. `GET /negotiators` and `GET /posting-lists` are missing. The negotiator picker asks for an ID; posting lists say they aren't available. (`/gardens`, `/buyers`, `/sellers`, `/grades` and `/auth/logout` exist.)
-4. Edit (`PUT`) is missing for offer lists, batches, courier, contracts, sales and ex-factory; delete is missing for everything except samples. Only samples (edit + delete) and bid book (edit) have those actions in the app.
-5. `APP_DEBUG=false`, JSON 404 for unknown API paths.
+1. `GET /sales-register` returns 500 (it tries to insert a record during a GET). The sales register list can't load.
+2. `GET /sales-register/{id}` and `GET /samples/{id}` return 500. Those detail screens show the list copy instead.
+3. Edit (`PUT`) is missing for offer lists, batches, courier, contracts, sales and ex-factory; delete is missing for everything except samples.
+4. `APP_DEBUG=false`, JSON 404 for unknown API paths.
 
 ## Not built yet (from the spec)
 

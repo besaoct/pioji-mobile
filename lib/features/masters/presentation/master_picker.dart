@@ -1,9 +1,96 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/design/context_ext.dart';
+import '../../../core/design/tokens.dart';
+import '../../../core/design/typography.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/fields.dart';
+import '../../../core/widgets/search_field.dart';
 import '../../../core/widgets/sheets.dart';
 import '../data/masters_repository.dart';
+
+class _RemoteSearchSheet extends ConsumerStatefulWidget {
+  const _RemoteSearchSheet({required this.title, required this.path, required this.initial, this.selectedId});
+
+  final String title;
+  final String path;
+  final FutureProvider<List<MasterItem>> initial;
+  final int? selectedId;
+
+  @override
+  ConsumerState<_RemoteSearchSheet> createState() => _RemoteSearchSheetState();
+}
+
+class _RemoteSearchSheetState extends ConsumerState<_RemoteSearchSheet> {
+  List<MasterItem>? _results;
+  bool _loading = true;
+  int _seq = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(widget.initial.future).then((v) {
+      if (mounted && _seq == 0) setState(() => (_results = v, _loading = false));
+    });
+  }
+
+  Future<void> _search(String q) async {
+    final seq = ++_seq;
+    setState(() => _loading = true);
+    final r = await ref.read(mastersRepositoryProvider).search(widget.path, q);
+    if (!mounted || seq != _seq) return;
+    setState(() => (_results = r, _loading = false));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final items = _results ?? const <MasterItem>[];
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, MediaQuery.of(context).viewInsets.bottom),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(widget.title, style: AppText.title),
+              const SizedBox(height: AppSpace.md),
+              SearchField(hint: 'Search by name', onChanged: _search),
+              const SizedBox(height: AppSpace.md),
+              Expanded(
+                child: _loading && items.isEmpty
+                    ? const Center(child: CupertinoActivityIndicator())
+                    : items.isEmpty
+                        ? Center(child: Text('No matches', style: AppText.callout.copyWith(color: c.textTertiary)))
+                        : SingleChildScrollView(
+                            child: GroupedSection(
+                              children: [
+                                for (final i in items)
+                                  AppListRow(
+                                    title: i.name,
+                                    subtitle: i.subtitle,
+                                    minHeight: 48,
+                                    titleStyle: AppText.body,
+                                    onTap: () => Navigator.pop(context, i),
+                                    trailing: i.id == widget.selectedId
+                                        ? Icon(CupertinoIcons.checkmark_alt, color: c.accent, size: 20)
+                                        : null,
+                                  ),
+                              ],
+                            ),
+                          ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 /// Picker row for a master record. Uses the list endpoint when it has data,
 /// otherwise asks for the numeric ID so forms keep working before the
@@ -17,6 +104,7 @@ class MasterPickerRow extends ConsumerWidget {
     required this.onChanged,
     this.error,
     this.placeholder = 'Select',
+    this.searchPath,
   });
 
   final String label;
@@ -26,6 +114,9 @@ class MasterPickerRow extends ConsumerWidget {
   final String? error;
   final String placeholder;
 
+  /// For large lists: search this endpoint on the server as the user types.
+  final String? searchPath;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ValueRow(
@@ -34,6 +125,15 @@ class MasterPickerRow extends ConsumerWidget {
       placeholder: placeholder,
       error: error,
       onTap: () async {
+        if (searchPath != null) {
+          final picked = await showModalBottomSheet<MasterItem>(
+            context: context,
+            isScrollControlled: true,
+            builder: (_) => _RemoteSearchSheet(title: label, path: searchPath!, initial: provider, selectedId: value?.id),
+          );
+          if (picked != null) onChanged(picked);
+          return;
+        }
         final items = await ref.read(provider.future);
         if (!context.mounted) return;
         if (items.isEmpty) {

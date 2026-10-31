@@ -166,7 +166,7 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
           label: 'Lot',
           children: [
             DateRow(label: 'Date', value: _date, onChanged: (d) => setState(() => _date = d), error: err('date')),
-            MasterPickerRow(label: 'Garden', provider: gardensProvider, value: _garden, onChanged: (g) => setState(() => _garden = g), error: err('garden_id')),
+            MasterPickerRow(label: 'Garden', provider: gardensProvider, searchPath: '/gardens', value: _garden, onChanged: (g) => setState(() => _garden = g), error: err('garden_id')),
             GradePickerRow(value: _grade, onChanged: (g) => setState(() => _grade = g), error: err('grade')),
             Row(children: [
               SizedBox(width: 120, child: FieldInput(label: 'Prefix', hint: 'IVP', controller: _prefix, textCapitalization: TextCapitalization.characters, error: err('inv_prefix'))),

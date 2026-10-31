@@ -39,6 +39,12 @@ abstract final class J {
     return str(j[flatKey]) ?? str(map(j[relation])?[field]);
   }
 
+  /// A value that is either text or an object like `{code: "BP"}` / `{name: …}`.
+  static String? code(Object? v) {
+    if (v is Map) return str(v['code']) ?? str(v['name']) ?? str(v['grade_name']);
+    return str(v);
+  }
+
   static List<int> ints(Object? v) =>
       v is List ? v.map(integer).whereType<int>().toList() : const [];
 }

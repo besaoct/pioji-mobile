@@ -26,19 +26,20 @@ class OfferedItem {
   String get key => '${type.api}:$id';
 
   factory OfferedItem.fromJson(ItemType type, Map<String, dynamic> j) {
-    final garden = J.nested(j, 'garden_name', 'garden') ?? 'Lot #${j['id']}';
-    final grade = J.str(j['grade']);
+    final garden = J.nested(j, 'garden_name', 'garden', 'garden_name') ?? 'Lot #${j['id']}';
+    final grade = J.code(j['grade']);
+    final buyersNode = j['assigned_buyers'] ?? j['buyers'] ?? j['allocated_buyers'];
     return OfferedItem(
       type: type,
       id: J.intOr(j['id'], 0),
       title: [garden, ?grade].join(' · '),
       invoice: Fmt.invoice(
-        J.str(j['inv_prefix']) ?? J.str(j['invoice_prefix']),
+        J.code(j['inv_pretx']) ?? J.code(j['inv_prefix']) ?? J.code(j['invoice_prefix']),
         J.str(j['inv_no']) ?? J.str(j['invoice_no']),
       ),
-      buyers: (j['buyers'] ?? j['allocated_buyers']) is List
-          ? ((j['buyers'] ?? j['allocated_buyers']) as List)
-              .map((b) => b is Map ? J.str(b['name']) : J.str(b))
+      buyers: buyersNode is List
+          ? buyersNode
+              .map((b) => b is Map ? (J.str(b['buyer_name']) ?? J.str(b['name'])) : J.str(b))
               .whereType<String>()
               .toList()
           : const [],

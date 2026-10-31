@@ -122,7 +122,7 @@ class _SampleFormScreenState extends ConsumerState<SampleFormScreen> with FormSu
           label: 'Lot',
           children: [
             DateRow(label: 'Arrival date', value: _arrival, onChanged: (d) => setState(() => _arrival = d), error: err('arrival_date')),
-            MasterPickerRow(label: 'Garden', provider: gardensProvider, value: _garden, onChanged: (g) => setState(() => _garden = g), error: err('garden_id')),
+            MasterPickerRow(label: 'Garden', provider: gardensProvider, searchPath: '/gardens', value: _garden, onChanged: (g) => setState(() => _garden = g), error: err('garden_id')),
             GradePickerRow(value: _grade, onChanged: (g) => setState(() => _grade = g), error: err('grade')),
             Row(
               children: [
