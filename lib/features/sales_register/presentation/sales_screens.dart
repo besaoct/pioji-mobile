@@ -10,6 +10,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/buttons.dart';
+import '../../../core/widgets/delete_record_button.dart';
 import '../../../core/widgets/detail.dart';
 import '../../../core/widgets/fields.dart';
 import '../../../core/widgets/form_submit.dart';
@@ -226,6 +227,15 @@ class SalesDetailScreen extends StatelessWidget {
             InfoRow('Discount', Fmt.money(s.discount)),
             if (s.remarks != null) InfoBlock('Remarks', s.remarks!),
           ],
+        ),
+        DeleteRecordButton(
+          what: 'sale',
+          name: [s.mark, Fmt.invoice(s.invoicePrefix, s.invoiceNo)].whereType<String>().where((e) => e.isNotEmpty).join(' · '),
+          onDelete: (ref) => ref.read(salesRepositoryProvider).delete(s.id),
+          onDeleted: (ref) {
+            ref.invalidate(salesListProvider);
+            ref.invalidate(exFactoryListProvider);
+          },
         ),
       ],
     );

@@ -12,6 +12,7 @@ import '../../../core/router/routes.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/buttons.dart';
+import '../../../core/widgets/delete_record_button.dart';
 import '../../../core/widgets/detail.dart';
 import '../../../core/widgets/fields.dart';
 import '../../../core/widgets/form_submit.dart';
@@ -349,6 +350,12 @@ class _BidDetailScreenState extends ConsumerState<BidDetailScreen> {
               ),
             ),
           ],
+        ),
+        DeleteRecordButton(
+          what: 'lot',
+          name: '${b.gardenName} · ${b.grade} (${b.invoiceNumber})',
+          onDelete: (ref) => ref.read(bidBookRepositoryProvider).delete(b.id),
+          onDeleted: (ref) => ref.invalidate(bidBookListProvider),
         ),
       ],
     );

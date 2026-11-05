@@ -87,6 +87,8 @@ class SalesRepository {
 
   Future<SaleEntry> get(int id) async => SaleEntry.fromJson(await _api.one('/sales-register/$id'));
 
+  Future<void> delete(int id) => _api.delete('/sales-register/$id');
+
   Future<Page<SaleEntry>> list(ListQuery q, {int page = 1}) =>
       _api.page('/sales-register', SaleEntry.fromJson, query: q.toQuery(), page: page);
 

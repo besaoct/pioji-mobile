@@ -13,6 +13,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/buttons.dart';
+import '../../../core/widgets/delete_record_button.dart';
 import '../../../core/widgets/detail.dart';
 import '../../../core/widgets/fields.dart';
 import '../../../core/widgets/form_submit.dart';
@@ -260,6 +261,9 @@ class BatchDetailScreen extends StatelessWidget {
     if (b == null) return const MissingItemScreen(what: 'batch');
     return DetailScaffold(
       title: b.name,
+      actions: [
+        LinkButton(label: 'Edit', onPressed: () => context.pushNamed(Routes.batchEdit, pathParameters: {'id': '${b.id}'}, extra: b)),
+      ],
       children: [
         GroupedSection(
           children: [
@@ -271,6 +275,80 @@ class BatchDetailScreen extends StatelessWidget {
         ),
         if (b.samples.isNotEmpty)
           GroupedSection(label: 'Samples', children: [for (final s in b.samples) SampleRow(sample: s)]),
+        DeleteRecordButton(
+          what: 'batch',
+          name: b.name,
+          onDelete: (ref) => ref.read(batchesRepositoryProvider).delete(b.id),
+          onDeleted: (ref) {
+            ref.invalidate(batchesListProvider);
+            ref.invalidate(unbatchedProvider);
+            ref.invalidate(samplesListProvider);
+          },
+        ),
+        Text(
+          'Deleting a batch keeps its samples; they become unbatched.',
+          style: AppText.footnote.copyWith(color: context.colors.textTertiary),
+        ),
+      ],
+    );
+  }
+}
+
+/// Edits what the API saves for a batch: status and notes (`remarks`).
+class BatchEditScreen extends ConsumerStatefulWidget {
+  const BatchEditScreen({super.key, required this.batch});
+  final Batch? batch;
+
+  @override
+  ConsumerState<BatchEditScreen> createState() => _BatchEditScreenState();
+}
+
+class _BatchEditScreenState extends ConsumerState<BatchEditScreen> with FormSubmit {
+  late bool _open = widget.batch?.open ?? true;
+  late final _notes = TextEditingController(text: widget.batch?.notes);
+
+  @override
+  void dispose() {
+    _notes.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final b = widget.batch!;
+    final ok = await submit<bool>(() async {
+      await ref.read(batchesRepositoryProvider).update(b.id, {
+        'status': _open ? 'open' : 'completed',
+        'remarks': _notes.text.trim(),
+      });
+      return true;
+    });
+    if (ok == true && mounted) {
+      ref.invalidate(batchesListProvider);
+      refreshSummaries(ref);
+      context.toast('Batch updated');
+      context.goNamed(Routes.batches);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final b = widget.batch;
+    if (b == null) return const MissingItemScreen(what: 'batch');
+    return FormScaffold(
+      title: 'Edit batch',
+      submitLabel: 'Save changes',
+      submitting: submitting,
+      onSubmit: _save,
+      children: [
+        if (banner != null) FormBanner(banner!),
+        GroupedSection(
+          label: b.name,
+          footer: const Text('Turn off Open to mark the batch completed.'),
+          children: [
+            SwitchRow(label: 'Open', value: _open, onChanged: (v) => setState(() => _open = v)),
+            FieldInput(label: 'Notes', hint: 'Testing premium BOP lots', controller: _notes, maxLines: 3, error: err('remarks')),
+          ],
+        ),
       ],
     );
   }

@@ -23,6 +23,10 @@ class CourierEntry {
     this.isPvt = false,
     this.description,
     this.photoUrl,
+    this.buyerId,
+    this.courierServiceId,
+    this.courierAddressId,
+    this.postingListIds = const [],
   });
 
   final int id;
@@ -38,6 +42,10 @@ class CourierEntry {
   final bool isPvt;
   final String? description;
   final String? photoUrl;
+  final int? buyerId;
+  final int? courierServiceId;
+  final int? courierAddressId;
+  final List<int> postingListIds;
 
   factory CourierEntry.fromJson(Map<String, dynamic> j) => CourierEntry(
         id: J.intOr(j['id'], 0),
@@ -53,6 +61,13 @@ class CourierEntry {
         isPvt: J.boolOr(j['is_pvt'], false),
         description: J.str(j['description']),
         photoUrl: J.str(j['photo_url']) ?? J.str(j['photo']),
+        buyerId: J.integer(j['buyer_id']),
+        courierServiceId: J.integer(j['courier_service_id']),
+        courierAddressId: J.integer(j['courier_address_id']),
+        postingListIds: (j['posting_lists'] is List ? j['posting_lists'] as List : const [])
+            .map((p) => p is Map ? J.integer(p['id']) : J.integer(p))
+            .whereType<int>()
+            .toList(),
       );
 }
 
@@ -68,6 +83,10 @@ class CourierRepository {
   final Api _api;
 
   Future<CourierEntry> get(int id) async => CourierEntry.fromJson(await _api.one('/courier-entries/$id'));
+
+  Future<void> delete(int id) => _api.delete('/courier-entries/$id');
+
+  Future<void> update(int id, Map<String, Object?> body) => _api.put('/courier-entries/$id', cleanBody(body));
 
   Future<Page<CourierEntry>> list(ListQuery q, {int page = 1}) =>
       _api.page('/courier-entries', CourierEntry.fromJson, query: q.toQuery(), page: page);

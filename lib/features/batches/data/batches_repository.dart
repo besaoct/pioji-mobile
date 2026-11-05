@@ -47,6 +47,10 @@ class BatchesRepository {
 
   Future<Batch> get(int id) async => Batch.fromJson(await _api.one('/batches/$id'));
 
+  Future<void> delete(int id) => _api.delete('/batches/$id');
+
+  Future<void> update(int id, Map<String, Object?> body) => _api.put('/batches/$id', cleanBody(body));
+
   Future<Page<Batch>> list(ListQuery q, {int page = 1}) =>
       _api.page('/batches', Batch.fromJson, query: q.toQuery(), page: page);
 
@@ -55,7 +59,7 @@ class BatchesRepository {
         'batch_name': name,
         'batch_date': Fmt.api(date),
         'status': open ? 'open' : 'completed',
-        'notes': notes,
+        'remarks': notes,
         'sample_ids': sampleIds,
       }));
 

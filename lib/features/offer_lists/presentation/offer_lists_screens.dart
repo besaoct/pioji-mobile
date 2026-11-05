@@ -10,6 +10,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/buttons.dart';
+import '../../../core/widgets/delete_record_button.dart';
 import '../../../core/widgets/detail.dart';
 import '../../../core/widgets/fields.dart';
 import '../../../core/widgets/form_submit.dart';
@@ -241,6 +242,12 @@ class OfferDetailScreen extends StatelessWidget {
         ),
         if (o.buyers.isNotEmpty)
           GroupedSection(label: 'Allocated buyers', children: [for (final b in o.buyers) InfoRow(b, null)]),
+        DeleteRecordButton(
+          what: 'offer',
+          name: '${o.title} (${Fmt.invoice(o.invPrefix, o.invNo)})',
+          onDelete: (ref) => ref.read(offerListsRepositoryProvider).delete(o.id),
+          onDeleted: (ref) => ref.invalidate(offerListsListProvider),
+        ),
       ],
     );
   }

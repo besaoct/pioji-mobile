@@ -117,7 +117,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 GoRoute(path: 'batches', name: Routes.batches, builder: (_, _) => const BatchesListScreen(), routes: [
                   _top('new', Routes.batchNew, (_) => const BatchFormScreen()),
                   _top('auto', Routes.batchAuto, (_) => const AutoBatchScreen()),
-                  GoRoute(path: ':id', name: Routes.batchDetail, builder: (_, s) => _detail<Batch>(s, 'batch', (r, id) => r.read(batchesRepositoryProvider).get(id), (x) => BatchDetailScreen(batch: x))),
+                  GoRoute(path: ':id', name: Routes.batchDetail, builder: (_, s) => _detail<Batch>(s, 'batch', (r, id) => r.read(batchesRepositoryProvider).get(id), (x) => BatchDetailScreen(batch: x)), routes: [
+                    _top('edit', Routes.batchEdit, (s) => BatchEditScreen(batch: _extra<Batch>(s))),
+                  ]),
                 ]),
                 GoRoute(path: ':id', name: Routes.sampleDetail, routes: [
                   _top('edit', Routes.sampleEdit, (s) => SampleFormScreen(editing: _extra<Sample>(s))),
@@ -161,11 +163,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               routes: [
                 GoRoute(path: 'courier', name: Routes.courier, builder: (_, _) => const CourierListScreen(), routes: [
                   _top('new', Routes.courierNew, (_) => const CourierFormScreen()),
-                  GoRoute(path: ':id', name: Routes.courierDetail, builder: (_, s) => _detail<CourierEntry>(s, 'courier entry', (r, id) => r.read(courierRepositoryProvider).get(id), (x) => CourierDetailScreen(entry: x))),
+                  GoRoute(path: ':id', name: Routes.courierDetail, builder: (_, s) => _detail<CourierEntry>(s, 'courier entry', (r, id) => r.read(courierRepositoryProvider).get(id), (x) => CourierDetailScreen(entry: x)), routes: [
+                    _top('edit', Routes.courierEdit, (s) => CourierFormScreen(editing: _extra<CourierEntry>(s))),
+                  ]),
                 ]),
                 GoRoute(path: 'contracts', name: Routes.contracts, builder: (_, _) => const ContractsListScreen(), routes: [
                   _top('new', Routes.contractNew, (_) => const ContractFormScreen()),
-                  GoRoute(path: ':id', name: Routes.contractDetail, builder: (_, s) => _detail<Contract>(s, 'contract', (r, id) => r.read(contractsRepositoryProvider).get(id), (x) => ContractDetailScreen(contract: x))),
+                  GoRoute(path: ':id', name: Routes.contractDetail, builder: (_, s) => _detail<Contract>(s, 'contract', (r, id) => r.read(contractsRepositoryProvider).get(id), (x) => ContractDetailScreen(contract: x)), routes: [
+                    _top('edit', Routes.contractEdit, (s) => ContractFormScreen(editing: _extra<Contract>(s))),
+                  ]),
                 ]),
                 GoRoute(path: 'sales', name: Routes.sales, builder: (_, _) => const SalesListScreen(), routes: [
                   _top('new', Routes.salesNew, (_) => const SalesFormScreen()),

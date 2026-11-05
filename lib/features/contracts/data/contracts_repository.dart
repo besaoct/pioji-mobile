@@ -46,6 +46,8 @@ class Contract {
     required this.id,
     required this.title,
     this.number,
+    this.sellerId,
+    this.buyerId,
     this.sellerName,
     this.buyerName,
     this.effective,
@@ -60,6 +62,8 @@ class Contract {
   final int id;
   final String title;
   final String? number;
+  final int? sellerId;
+  final int? buyerId;
   final String? sellerName;
   final String? buyerName;
   final DateTime? effective;
@@ -77,6 +81,8 @@ class Contract {
         id: J.intOr(j['id'], 0),
         title: (J.str(j['contract_title']) ?? 'Contract #${j['id']}').replaceAll(RegExp(r'\s+'), ' '),
         number: J.str(j['contract_number']),
+        sellerId: J.integer(j['seller_id']),
+        buyerId: J.integer(j['buyer_id']),
         sellerName: J.nested(j, 'seller_name', 'seller', 'seller_name'),
         buyerName: J.nested(j, 'buyer_name', 'buyer', 'buyer_name'),
         effective: J.date(j['effective_date']),
@@ -97,6 +103,10 @@ class ContractsRepository {
   final Api _api;
 
   Future<Contract> get(int id) async => Contract.fromJson(await _api.one('/contracts/$id'));
+
+  Future<void> delete(int id) => _api.delete('/contracts/$id');
+
+  Future<void> update(int id, Map<String, Object?> body) => _api.put('/contracts/$id', cleanBody(body));
 
   Future<Page<Contract>> list(ListQuery q, {int page = 1}) =>
       _api.page('/contracts', Contract.fromJson, query: q.toQuery(), page: page);

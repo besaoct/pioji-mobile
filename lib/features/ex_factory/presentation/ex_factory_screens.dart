@@ -13,6 +13,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/buttons.dart';
+import '../../../core/widgets/delete_record_button.dart';
 import '../../../core/widgets/detail.dart';
 import '../../../core/widgets/fields.dart';
 import '../../../core/widgets/form_submit.dart';
@@ -348,6 +349,15 @@ class ExFactoryDetailScreen extends StatelessWidget {
             InfoRow('Transport', b.transport),
             InfoRow('Credit days', b.creditDays?.toString()),
           ],
+        ),
+        DeleteRecordButton(
+          what: 'bill',
+          name: [b.billNo, b.mark, Fmt.invoice(b.invoicePrefix, b.invoiceNo)].whereType<String>().where((e) => e.isNotEmpty).join(' · '),
+          onDelete: (ref) => ref.read(exFactoryRepositoryProvider).delete(b.id),
+          onDeleted: (ref) {
+            ref.invalidate(exFactoryListProvider);
+            ref.invalidate(exFactoryMetricsProvider);
+          },
         ),
       ],
     );

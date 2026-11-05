@@ -14,6 +14,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/buttons.dart';
+import '../../../core/widgets/delete_record_button.dart';
 import '../../../core/widgets/detail.dart';
 import '../../../core/widgets/fields.dart';
 import '../../../core/widgets/form_submit.dart';
@@ -67,29 +68,37 @@ class CourierListScreen extends StatelessWidget {
 }
 
 class CourierFormScreen extends ConsumerStatefulWidget {
-  const CourierFormScreen({super.key});
+  const CourierFormScreen({super.key, this.editing});
+
+  /// The entry to edit; null creates a new one.
+  final CourierEntry? editing;
 
   @override
   ConsumerState<CourierFormScreen> createState() => _CourierFormScreenState();
 }
 
 class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with FormSubmit {
-  bool _toBuyer = true;
-  MasterItem? _buyer;
-  MasterItem? _address;
-  MasterItem? _service;
+  late final CourierEntry? _e = widget.editing;
+  late bool _toBuyer = _e == null || _e.courierAddressId == null;
+  late MasterItem? _buyer = _e?.buyerId == null ? null : MasterItem(_e!.buyerId!, _e.buyerName ?? '#${_e.buyerId}');
+  late MasterItem? _address = _e?.courierAddressId == null
+      ? null
+      : MasterItem(_e!.courierAddressId!, _e.destinationAddress ?? '#${_e.courierAddressId}');
+  late MasterItem? _service = _e?.courierServiceId == null
+      ? null
+      : MasterItem(_e!.courierServiceId!, _e.courierName ?? '#${_e.courierServiceId}');
   String? _phone;
-  DateTime _pickup = DateTime.now();
-  late String _day = Fmt.weekday(_pickup);
-  bool _auc = false;
-  bool _pvt = false;
+  late DateTime _pickup = _e?.pickupDate ?? DateTime.now();
+  late String _day = _e?.pickupDay ?? Fmt.weekday(_pickup);
+  late bool _auc = _e?.isAuc ?? false;
+  late bool _pvt = _e?.isPvt ?? false;
   String? _photo;
-  Set<int> _postingIds = {};
-  final _addressText = TextEditingController();
-  final _courierName = TextEditingController();
-  final _tracking = TextEditingController();
-  final _weight = TextEditingController();
-  final _desc = TextEditingController();
+  late Set<int> _postingIds = {...?_e?.postingListIds};
+  late final _addressText = TextEditingController(text: _e?.destinationAddress);
+  late final _courierName = TextEditingController(text: _e?.courierServiceId == null ? _e?.courierName : null);
+  late final _tracking = TextEditingController(text: _e?.trackingNumber);
+  late final _weight = TextEditingController(text: Fmt.editable(_e?.weight));
+  late final _desc = TextEditingController(text: _e?.description);
 
   @override
   void dispose() {
@@ -113,16 +122,20 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
   }
 
   Future<void> _scan() async {
-    final code = await Navigator.of(context).push<String>(
-      MaterialPageRoute(fullscreenDialog: true, builder: (_) => const _ScannerScreen()),
-    );
+    final code = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(fullscreenDialog: true, builder: (_) => const _ScannerScreen()));
     if (code != null) {
       setState(() => _tracking.text = code.replaceAll(RegExp('[^A-Za-z0-9]'), ''));
     }
   }
 
   Future<void> _addPhoto() async {
-    final choice = await chooseAction(context, title: 'Add a photo', actions: const {'camera': 'Take photo', 'gallery': 'Choose from library'});
+    final choice = await chooseAction(
+      context,
+      title: 'Add a photo',
+      actions: const {'camera': 'Take photo', 'gallery': 'Choose from library'},
+    );
     if (choice == null) return;
     final file = await ImagePicker().pickImage(
       source: choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
@@ -139,8 +152,12 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
       context.toast("Posting lists aren't available yet.");
       return;
     }
-    final sel = await showMultiPickerSheet<int>(context,
-        title: 'Posting lists', selected: _postingIds, options: [for (final p in items) PickOption(p.id, p.name)]);
+    final sel = await showMultiPickerSheet<int>(
+      context,
+      title: 'Posting lists',
+      selected: _postingIds,
+      options: [for (final p in items) PickOption(p.id, p.name)],
+    );
     if (sel != null) setState(() => _postingIds = sel);
   }
 
@@ -148,7 +165,8 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
     final tracking = _tracking.text.trim();
     final ok = await submit<bool>(
       () async {
-        await ref.read(courierRepositoryProvider).create({
+        final repo = ref.read(courierRepositoryProvider);
+        final body = <String, Object?>{
           'destination_type': _toBuyer ? 'buyer' : 'custom',
           'buyer_id': _toBuyer ? _buyer?.id : null,
           'courier_address_id': _toBuyer ? null : _address?.id,
@@ -163,13 +181,17 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
           'weight': Fmt.parse(_weight.text),
           'description': _desc.text.trim(),
           'posting_list_ids': _postingIds.toList(),
-        }, photoPath: _photo);
+        };
+        if (_e == null) {
+          await repo.create(body, photoPath: _photo);
+        } else {
+          await repo.update(_e.id, body);
+        }
         return true;
       },
       clientErrors: {
         if (tracking.isEmpty) 'tracking_number': 'Enter or scan the tracking number.',
-        if (tracking.isNotEmpty && !RegExp(r'^[A-Za-z0-9]+$').hasMatch(tracking))
-          'tracking_number': 'Use letters and numbers only.',
+        if (tracking.isNotEmpty && !RegExp(r'^[A-Za-z0-9]+$').hasMatch(tracking)) 'tracking_number': 'Use letters and numbers only.',
         if (_toBuyer && _buyer == null) 'buyer_id': 'Choose a buyer.',
         if (!_toBuyer && _address == null) 'courier_address_id': 'Choose an address.',
       },
@@ -177,8 +199,12 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
     if (ok == true && mounted) {
       ref.invalidate(courierListProvider);
       refreshSummaries(ref);
-      context.toast('Courier entry saved');
-      context.pop();
+      context.toast(_e == null ? 'Courier entry saved' : 'Courier entry updated');
+      if (_e == null) {
+        context.pop();
+      } else {
+        context.goNamed(Routes.courier);
+      }
     }
   }
 
@@ -187,8 +213,8 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
     final c = context.colors;
     final options = ref.watch(courierOptionsProvider).value;
     return FormScaffold(
-      title: 'New courier entry',
-      submitLabel: 'Save entry',
+      title: _e == null ? 'New courier entry' : 'Edit courier entry',
+      submitLabel: _e == null ? 'Save entry' : 'Save changes',
       submitting: submitting,
       onSubmit: _save,
       children: [
@@ -214,7 +240,11 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
                     context.toast('No saved addresses yet. Add one in the admin panel.');
                     return;
                   }
-                  final a = await showPickerSheet<MasterItem>(context, title: 'Saved addresses', options: [for (final a in list) PickOption(a, a.name)]);
+                  final a = await showPickerSheet<MasterItem>(
+                    context,
+                    title: 'Saved addresses',
+                    options: [for (final a in list) PickOption(a, a.name)],
+                  );
                   if (a != null) setState(() => _address = a);
                 },
               ),
@@ -241,7 +271,11 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
                   context.toast('No courier services listed. Type the courier name.');
                   return;
                 }
-                final s = await showPickerSheet<MasterItem>(context, title: 'Courier service', options: [for (final s in list) PickOption(s, s.name)]);
+                final s = await showPickerSheet<MasterItem>(
+                  context,
+                  title: 'Courier service',
+                  options: [for (final s in list) PickOption(s, s.name)],
+                );
                 if (s != null) setState(() => _service = s);
               },
             ),
@@ -253,7 +287,12 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
               error: err('tracking_number'),
               inputFormatters: alphanumericOnly,
               textCapitalization: TextCapitalization.characters,
-              trailing: CircleIconButton(icon: CupertinoIcons.barcode_viewfinder, tinted: true, semanticLabel: 'Scan barcode', onPressed: _scan),
+              trailing: CircleIconButton(
+                icon: CupertinoIcons.barcode_viewfinder,
+                tinted: true,
+                semanticLabel: 'Scan barcode',
+                onPressed: _scan,
+              ),
             ),
           ],
         ),
@@ -272,45 +311,70 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
               label: 'Pickup day',
               value: _day,
               onTap: () async {
-                final d = await showPickerSheet<String>(context, title: 'Pickup day', selected: _day, searchable: false, options: [for (final d in _days) PickOption(d, d)]);
+                final d = await showPickerSheet<String>(
+                  context,
+                  title: 'Pickup day',
+                  selected: _day,
+                  searchable: false,
+                  options: [for (final d in _days) PickOption(d, d)],
+                );
                 if (d != null) setState(() => _day = d);
               },
             ),
             SwitchRow(label: 'Auction (AUC)', value: _auc, onChanged: (v) => setState(() => _auc = v)),
             SwitchRow(label: 'Private (PVT)', value: _pvt, onChanged: (v) => setState(() => _pvt = v)),
-            FieldInput(label: 'Weight', hint: '2.5', suffix: 'kg', controller: _weight, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: decimalOnly),
+            FieldInput(
+              label: 'Weight',
+              hint: '2.5',
+              suffix: 'kg',
+              controller: _weight,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: decimalOnly,
+            ),
             FieldInput(label: 'Description', hint: '5 sample packets for evaluation', controller: _desc, maxLines: 2),
-            ValueRow(label: 'Posting lists', value: _postingIds.isEmpty ? null : '${_postingIds.length} selected', placeholder: 'None', onTap: _pickPosting),
+            ValueRow(
+              label: 'Posting lists',
+              value: _postingIds.isEmpty ? null : '${_postingIds.length} selected',
+              placeholder: 'None',
+              onTap: _pickPosting,
+            ),
           ],
         ),
-        Row(
-          children: [
-            GestureDetector(
-              onTap: _addPhoto,
-              child: Container(
-                width: 72,
-                height: 72,
-                decoration: ShapeDecoration(color: c.surface, shape: AppRadius.cardBorder, shadows: c.cardShadow),
-                child: _photo == null
-                    ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Icon(CupertinoIcons.camera, color: c.accent),
-                        const SizedBox(height: 2),
-                        Text('Photo', style: AppText.caption.copyWith(color: c.accent)),
-                      ])
-                    : Icon(CupertinoIcons.checkmark_alt_circle_fill, color: c.success, size: 30),
+        // A photo can only be attached when creating (edits are sent as JSON).
+        if (_e == null)
+          Row(
+            children: [
+              GestureDetector(
+                onTap: _addPhoto,
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: ShapeDecoration(color: c.surface, shape: AppRadius.cardBorder, shadows: c.cardShadow),
+                  child: _photo == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(CupertinoIcons.camera, color: c.accent),
+                            const SizedBox(height: 2),
+                            Text('Photo', style: AppText.caption.copyWith(color: c.accent)),
+                          ],
+                        )
+                      : Icon(CupertinoIcons.checkmark_alt_circle_fill, color: c.success, size: 30),
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpace.md),
-            Expanded(
-              child: _photo == null
-                  ? Text('Add a photo of the parcel. Optional.', style: AppText.footnote.copyWith(color: c.textTertiary))
-                  : Row(children: [
-                      Expanded(child: Text('Photo attached', style: AppText.callout)),
-                      LinkButton(label: 'Remove', color: c.danger, onPressed: () => setState(() => _photo = null)),
-                    ]),
-            ),
-          ],
-        ),
+              const SizedBox(width: AppSpace.md),
+              Expanded(
+                child: _photo == null
+                    ? Text('Add a photo of the parcel. Optional.', style: AppText.footnote.copyWith(color: c.textTertiary))
+                    : Row(
+                        children: [
+                          Expanded(child: Text('Photo attached', style: AppText.callout)),
+                          LinkButton(label: 'Remove', color: c.danger, onPressed: () => setState(() => _photo = null)),
+                        ],
+                      ),
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -350,7 +414,10 @@ class _ScannerScreenState extends State<_ScannerScreen> {
             child: Container(
               width: 260,
               height: 140,
-              decoration: BoxDecoration(border: Border.all(color: Colors.white70, width: 2), borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white70, width: 2),
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         ],
@@ -369,14 +436,30 @@ class CourierDetailScreen extends StatelessWidget {
     if (e == null) return const MissingItemScreen(what: 'courier entry');
     return DetailScaffold(
       title: e.entryNo ?? 'Courier entry',
+      actions: [
+        LinkButton(
+          label: 'Edit',
+          onPressed: () => context.pushNamed(Routes.courierEdit, pathParameters: {'id': '${e.id}'}, extra: e),
+        ),
+      ],
       children: [
         AppCard(
           padding: const EdgeInsets.all(AppSpace.lg),
-          child: Row(children: [
-            Expanded(child: Text(e.trackingNumber ?? '–', style: AppText.headline)),
-            if (e.isAuc) const Padding(padding: EdgeInsets.only(left: 6), child: StatusBadge('AUC', tone: Tone.accent)),
-            if (e.isPvt) const Padding(padding: EdgeInsets.only(left: 6), child: StatusBadge('PVT', tone: Tone.accent)),
-          ]),
+          child: Row(
+            children: [
+              Expanded(child: Text(e.trackingNumber ?? '–', style: AppText.headline)),
+              if (e.isAuc)
+                const Padding(
+                  padding: EdgeInsets.only(left: 6),
+                  child: StatusBadge('AUC', tone: Tone.accent),
+                ),
+              if (e.isPvt)
+                const Padding(
+                  padding: EdgeInsets.only(left: 6),
+                  child: StatusBadge('PVT', tone: Tone.accent),
+                ),
+            ],
+          ),
         ),
         GroupedSection(
           children: [
@@ -387,6 +470,12 @@ class CourierDetailScreen extends StatelessWidget {
             if (e.destinationAddress != null) InfoBlock('Address', e.destinationAddress!),
             if (e.description != null) InfoBlock('Description', e.description!),
           ],
+        ),
+        DeleteRecordButton(
+          what: 'courier entry',
+          name: [e.entryNo, e.trackingNumber].whereType<String>().join(' · '),
+          onDelete: (ref) => ref.read(courierRepositoryProvider).delete(e.id),
+          onDeleted: (ref) => ref.invalidate(courierListProvider),
         ),
       ],
     );

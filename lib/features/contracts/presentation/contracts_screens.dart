@@ -4,13 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/application/invalidation.dart';
 import '../../../core/design/context_ext.dart';
-import '../../../core/design/tokens.dart';
 import '../../../core/design/typography.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/buttons.dart';
+import '../../../core/widgets/delete_record_button.dart';
 import '../../../core/widgets/detail.dart';
 import '../../../core/widgets/fields.dart';
 import '../../../core/widgets/form_submit.dart';
@@ -53,9 +53,14 @@ class ContractsListScreen extends StatelessWidget {
 }
 
 class _ItemDraft {
+  _ItemDraft([ContractItem? from])
+      : grade = from?.grade,
+        price = TextEditingController(text: Fmt.editable(from?.pricePerKg)),
+        qty = TextEditingController(text: Fmt.editable(from?.quantity));
+
   String? grade;
-  final price = TextEditingController();
-  final qty = TextEditingController();
+  final TextEditingController price;
+  final TextEditingController qty;
 
   void dispose() {
     price.dispose();
@@ -66,24 +71,30 @@ class _ItemDraft {
 }
 
 class ContractFormScreen extends ConsumerStatefulWidget {
-  const ContractFormScreen({super.key});
+  const ContractFormScreen({super.key, this.editing});
+
+  /// The contract to edit; null creates a new one.
+  final Contract? editing;
 
   @override
   ConsumerState<ContractFormScreen> createState() => _ContractFormScreenState();
 }
 
 class _ContractFormScreenState extends ConsumerState<ContractFormScreen> with FormSubmit {
-  MasterItem? _seller;
-  MasterItem? _buyer;
-  DateTime _effective = DateTime.now();
-  DateTime _expiry = DateTime.now().add(const Duration(days: 30));
-  ContractStatus _status = ContractStatus.draft;
-  final _title = TextEditingController();
-  final _number = TextEditingController();
-  final _prompt = TextEditingController();
-  final _discount = TextEditingController();
-  final _terms = TextEditingController();
-  final _items = <_ItemDraft>[_ItemDraft()];
+  late final Contract? _e = widget.editing;
+  late MasterItem? _seller = _e?.sellerId == null ? null : MasterItem(_e!.sellerId!, _e.sellerName ?? '#${_e.sellerId}');
+  late MasterItem? _buyer = _e?.buyerId == null ? null : MasterItem(_e!.buyerId!, _e.buyerName ?? '#${_e.buyerId}');
+  late DateTime _effective = _e?.effective ?? DateTime.now();
+  late DateTime _expiry = _e?.expiry ?? DateTime.now().add(const Duration(days: 30));
+  late ContractStatus _status = _e?.status ?? ContractStatus.draft;
+  late final _title = TextEditingController(text: _e?.title);
+  late final _number = TextEditingController(text: _e?.number);
+  late final _prompt = TextEditingController(text: _e?.promptDays?.toString());
+  late final _discount = TextEditingController(text: Fmt.editable(_e?.discount));
+  late final _terms = TextEditingController(text: _e?.terms);
+  late final _items = <_ItemDraft>[
+    if (_e != null && _e.items.isNotEmpty) for (final i in _e.items) _ItemDraft(i) else _ItemDraft(),
+  ];
 
   @override
   void dispose() {
@@ -100,7 +111,8 @@ class _ContractFormScreenState extends ConsumerState<ContractFormScreen> with Fo
     final items = _items.map((d) => d.toItem()).where((i) => i.grade != null || i.pricePerKg != null).toList();
     final ok = await submit<bool>(
       () async {
-        await ref.read(contractsRepositoryProvider).create({
+        final repo = ref.read(contractsRepositoryProvider);
+        final body = <String, Object?>{
           'seller_id': _seller?.id,
           'buyer_id': _buyer?.id,
           'contract_title': _title.text.trim(),
@@ -112,20 +124,31 @@ class _ContractFormScreenState extends ConsumerState<ContractFormScreen> with Fo
           'status': _status.api,
           'terms_and_conditions': _terms.text.trim(),
           'contract_items': [for (final i in items) i.toJson()],
-        });
+        };
+        if (_e == null) {
+          await repo.create(body);
+        } else {
+          await repo.update(_e.id, body);
+        }
         return true;
       },
       clientErrors: {
         if (_seller == null) 'seller_id': 'Choose a seller.',
         if (_title.text.trim().isEmpty) 'contract_title': 'Enter a title.',
         if (_expiry.isBefore(_effective)) 'expiry_date': "Expiry can't be before the effective date.",
+        for (final (n, d) in _items.indexed)
+          if (d.grade != null && (Fmt.parse(d.price.text) ?? 0) <= 0) 'contract_items.$n.price_per_kg': 'Enter a price.',
       },
     );
     if (ok == true && mounted) {
       ref.invalidate(contractsListProvider);
       refreshSummaries(ref);
-      context.toast('Contract saved');
-      context.pop();
+      context.toast(_e == null ? 'Contract saved' : 'Contract updated');
+      if (_e == null) {
+        context.pop();
+      } else {
+        context.goNamed(Routes.contracts);
+      }
     }
   }
 
@@ -136,8 +159,8 @@ class _ContractFormScreenState extends ConsumerState<ContractFormScreen> with Fo
     final qty = items.fold<double>(0, (s, i) => s + (i.quantity ?? 0));
     final value = items.fold<double>(0, (s, i) => s + i.value);
     return FormScaffold(
-      title: 'New contract',
-      submitLabel: 'Save contract',
+      title: _e == null ? 'New contract' : 'Edit contract',
+      submitLabel: _e == null ? 'Save contract' : 'Save changes',
       submitting: submitting,
       onSubmit: _save,
       children: [
@@ -183,7 +206,7 @@ class _ContractFormScreenState extends ConsumerState<ContractFormScreen> with Fo
             children: [
               GradePickerRow(value: _items[i].grade, onChanged: (g) => setState(() => _items[i].grade = g)),
               Row(children: [
-                Expanded(child: FieldInput(label: 'Price per kg', hint: '320.00', suffix: '₹', controller: _items[i].price, onChanged: (_) => setState(() {}), keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: decimalOnly)),
+                Expanded(child: FieldInput(label: 'Price per kg', hint: '320.00', suffix: '₹', controller: _items[i].price, error: err('contract_items.$i.price_per_kg'), onChanged: (_) => setState(() {}), keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: decimalOnly)),
                 Expanded(child: FieldInput(label: 'Quantity', hint: '5000', suffix: 'kg', controller: _items[i].qty, onChanged: (_) => setState(() {}), keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: decimalOnly)),
               ]),
             ],
@@ -217,6 +240,9 @@ class ContractDetailScreen extends StatelessWidget {
     final qty = k.items.fold<double>(0, (s, i) => s + (i.quantity ?? 0));
     return DetailScaffold(
       title: k.title,
+      actions: [
+        LinkButton(label: 'Edit', onPressed: () => context.pushNamed(Routes.contractEdit, pathParameters: {'id': '${k.id}'}, extra: k)),
+      ],
       children: [
         GroupedSection(
           children: [
@@ -243,7 +269,12 @@ class ContractDetailScreen extends StatelessWidget {
             ],
           ),
         if (k.terms != null) AppCard(child: InfoBlock('Terms and conditions', k.terms!)),
-        const SizedBox(height: AppSpace.sm),
+        DeleteRecordButton(
+          what: 'contract',
+          name: [k.number, k.title].whereType<String>().join(' · '),
+          onDelete: (ref) => ref.read(contractsRepositoryProvider).delete(k.id),
+          onDeleted: (ref) => ref.invalidate(contractsListProvider),
+        ),
       ],
     );
   }

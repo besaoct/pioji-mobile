@@ -15,6 +15,7 @@ abstract final class Routes {
   static const batchNew = 'batchNew';
   static const batchAuto = 'batchAuto';
   static const batchDetail = 'batchDetail';
+  static const batchEdit = 'batchEdit';
 
   static const offers = 'offers';
   static const offerNew = 'offerNew';
@@ -30,9 +31,11 @@ abstract final class Routes {
   static const courier = 'courier';
   static const courierNew = 'courierNew';
   static const courierDetail = 'courierDetail';
+  static const courierEdit = 'courierEdit';
   static const contracts = 'contracts';
   static const contractNew = 'contractNew';
   static const contractDetail = 'contractDetail';
+  static const contractEdit = 'contractEdit';
   static const sales = 'sales';
   static const salesNew = 'salesNew';
   static const salesDetail = 'salesDetail';

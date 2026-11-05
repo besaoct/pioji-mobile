@@ -6,6 +6,7 @@ import '../design/context_ext.dart';
 import '../design/tokens.dart';
 import '../design/typography.dart';
 import 'buttons.dart';
+import 'one_line_text.dart';
 import 'states.dart';
 
 /// Height reserved at the bottom of tab screens for the tab bar.
@@ -64,7 +65,7 @@ class LargeTitleScaffold extends StatelessWidget {
               topBar,
               if (caption != null)
                 Text(caption!, style: AppText.footnote.copyWith(color: c.textTertiary)),
-              Semantics(header: true, child: Text(title, style: AppText.largeTitle)),
+              Semantics(header: true, child: OneLineText(title, style: AppText.largeTitle)),
               const SizedBox(height: AppSpace.md),
               const OfflineBanner(),
               ...header,
