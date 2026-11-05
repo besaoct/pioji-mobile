@@ -75,15 +75,18 @@ class HomeScreen extends ConsumerWidget {
       slivers: [
         SliverList.list(
           children: [
-            GridView.count(
-              crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
+            GridView(
+              padding: EdgeInsets.zero,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 1.9,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                mainAxisExtent: 84,
+              ),
               children: [
-                MetricCard(label: 'Samples received', value: count(samples), loading: samples.isLoading, onTap: () => context.goNamed(Routes.samples)),
+                MetricCard(label: 'Samples', value: count(samples), loading: samples.isLoading, onTap: () => context.goNamed(Routes.samples)),
                 MetricCard(label: 'Unbatched', value: count(unbatched), loading: unbatched.isLoading, onTap: () => context.pushNamed(Routes.batchAuto)),
                 MetricCard(label: 'Open bids', value: count(open), loading: open.isLoading, onTap: () => context.goNamed(Routes.bids)),
                 MetricCard(

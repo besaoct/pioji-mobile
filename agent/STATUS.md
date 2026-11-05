@@ -29,7 +29,7 @@ On 31 Oct 2026, signed in as admin: every list, lookup and detail response was f
 
 - Creating, editing and deleting records (only empty-body validation was tried, to avoid writing data).
 - Allocation, auto-batch, logout and photo upload against the live server.
-- The app has not been run on a device or simulator by an agent; only `flutter analyze`, the parser tests and a simulator build.
+- Run in the iOS Simulator (iPhone 17 Pro Max) on 5 Nov 2026, signed in: onboarding, sign-in validation, Home, all four tab lists, More, contracts list and detail, sales register error state, New sample form (garden search, 2-of-3 weights). Nothing was saved. Android has not been run.
 
 ## Blocked on the backend
 
@@ -39,6 +39,7 @@ Details in `docs/API_DOCS.md` → Verified responses → Server bugs.
 2. `GET /sales-register/{id}` and `GET /samples/{id}` return 500. Those detail screens show the list copy instead.
 3. Edit (`PUT`) is missing for offer lists, batches, courier, contracts, sales and ex-factory; delete is missing for everything except samples.
 4. `APP_DEBUG=false`, JSON 404 for unknown API paths.
+5. `GET /samples` ignores `arrival_date`, so Home shows the total sample count, not today's, and the Samples arrival filter has no effect.
 
 ## Not built yet (from the spec)
 

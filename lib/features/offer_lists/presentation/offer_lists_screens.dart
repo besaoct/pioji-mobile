@@ -58,7 +58,7 @@ class OfferListsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(Fmt.money(o.price), style: AppText.callout.copyWith(fontWeight: FontWeight.w600)),
+            Text(o.price != null ? Fmt.money(o.price) : Fmt.kg(o.totalKgs), style: AppText.callout.copyWith(fontWeight: o.price != null ? FontWeight.w600 : FontWeight.w400)),
             const SizedBox(height: 2),
             Text(Fmt.dayShort(o.date), style: AppText.footnote.copyWith(color: context.colors.textTertiary)),
           ],

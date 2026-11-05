@@ -29,7 +29,9 @@ abstract final class J {
     return fallback;
   }
 
-  static DateTime? date(Object? v) => v == null ? null : DateTime.tryParse(v.toString());
+  /// Dates arrive in UTC (e.g. `2026-10-29T18:30:00Z` for 30 Oct in India),
+  /// so they are converted to local time before display.
+  static DateTime? date(Object? v) => v == null ? null : DateTime.tryParse(v.toString())?.toLocal();
 
   static Map<String, dynamic>? map(Object? v) => v is Map<String, dynamic> ? v : null;
 

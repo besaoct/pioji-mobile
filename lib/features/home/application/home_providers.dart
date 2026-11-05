@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/application/invalidation.dart';
 import '../../../core/list/list_query.dart';
-import '../../../core/utils/formatters.dart';
 import '../../allocation/data/allocation_repository.dart';
 import '../../batches/data/batches_repository.dart';
 import '../../bid_book/data/bid_book_repository.dart';
@@ -14,12 +13,12 @@ import '../../samples/domain/sample.dart';
 DateTime get _today => DateUtils.dateOnly(DateTime.now());
 
 /// Each Home number loads and fails on its own, and reloads after any write.
+///
+/// All samples: the API ignores `arrival_date` on `/samples` (verified
+/// 2026-11-05), so a "today" count isn't possible yet.
 final samplesTodayCountProvider = FutureProvider<int>((ref) async {
   ref.watch(summaryRefreshProvider);
-  final p = await ref.read(samplesRepositoryProvider).list(
-        ListQuery(params: {'arrival_date': Fmt.api(_today)}),
-        perPage: 1,
-      );
+  final p = await ref.read(samplesRepositoryProvider).list(const ListQuery(), perPage: 1);
   return p.total;
 });
 

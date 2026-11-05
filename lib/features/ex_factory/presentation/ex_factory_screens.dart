@@ -72,13 +72,16 @@ class _ExFactoryListScreenState extends ConsumerState<ExFactoryListScreen> {
       ],
       filters: const [DateFilter('start_date', 'From'), DateFilter('end_date', 'To')],
       header: [
-        GridView.count(
-          crossAxisCount: 2,
+        GridView(
+          padding: EdgeInsets.zero,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 2.6,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            mainAxisExtent: 64,
+          ),
           children: [
             for (final s in RegisterStatus.values)
               AppCard(

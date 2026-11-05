@@ -75,7 +75,7 @@ class Contract {
 
   factory Contract.fromJson(Map<String, dynamic> j) => Contract(
         id: J.intOr(j['id'], 0),
-        title: J.str(j['contract_title']) ?? 'Contract #${j['id']}',
+        title: (J.str(j['contract_title']) ?? 'Contract #${j['id']}').replaceAll(RegExp(r'\s+'), ' '),
         number: J.str(j['contract_number']),
         sellerName: J.nested(j, 'seller_name', 'seller', 'seller_name'),
         buyerName: J.nested(j, 'buyer_name', 'buyer', 'buyer_name'),

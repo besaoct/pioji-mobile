@@ -11,11 +11,13 @@ class OneLineText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Data sometimes carries line breaks or runs of spaces; show one line.
+    final flat = text.replaceAll(RegExp(r'\s+'), ' ').trim();
     return Tooltip(
-      message: text,
+      message: flat,
       excludeFromSemantics: true,
       child: Text(
-        text,
+        flat,
         style: style,
         textAlign: textAlign,
         maxLines: 1,

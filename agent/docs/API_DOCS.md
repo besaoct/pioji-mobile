@@ -733,6 +733,9 @@ Filters verified: `search`, `status`, `tab` (bid book), `date_from` / `date_to`,
 | 2 | `GET /sales-register/{id}` | 500 `Call to undefined relationship [garden] on model [App\Models\SalesRegister]` | Remove `garden` from the eager loads or add the relation |
 | 3 | `GET /samples/{id}` | 500 `Call to undefined method App\Services\SampleService::getSampleDetailsForMobile()` | Missing service method |
 | 4 | Errors in general | Exception text returned to clients | Set `APP_DEBUG=false`; return a generic message |
+| 5 | `GET /samples?arrival_date=…` | Filter ignored: always returns every sample (verified 2026-11-05; `date`, `date_from`/`date_to` also ignored) | Apply the filter server-side. Until then the app's arrival filter and a "samples today" count can't work |
+
+**Dates** are sent in UTC, e.g. `2026-10-29T18:30:00.000000Z` means 30 Oct 2026 in India. Convert to local time before showing a date (the app does).
 
 ### Still missing
 
