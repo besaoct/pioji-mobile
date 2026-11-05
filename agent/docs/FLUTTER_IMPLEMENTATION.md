@@ -1052,9 +1052,9 @@ Fixtures live in `test/fixtures/` and are captured from the real API once admin 
 
 | Flavor | API base URL | App id suffix | App name |
 |---|---|---|---|
-| dev | staging or local | `.dev` | Tea ERP Dev |
-| staging | staging host | `.staging` | Tea ERP Beta |
-| prod | `https://gold-sardine-283964.hostingersite.com/api/v1` (or the final domain) | — | Tea ERP |
+| dev | staging or local | `.dev` | Pioji Dev |
+| staging | staging host | `.staging` | Pioji Beta |
+| prod | `https://gold-sardine-283964.hostingersite.com/api/v1` (or the final domain) | — | Pioji |
 
 ```bash
 flutter run --flavor dev -t lib/main_dev.dart --dart-define-from-file=env/dev.json

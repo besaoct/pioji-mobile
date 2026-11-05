@@ -149,7 +149,7 @@ class LegalScreen extends StatelessWidget {
             '• Your name and email, so the app can show who is signed in.\n'
             '• Your appearance setting and whether you have seen onboarding.\n\n'
             'What it sends:\n\n'
-            '• Only the records you create or edit, to your company\'s Tea ERP server.\n'
+            '• Only the records you create or edit, to your company\'s Pioji server.\n'
             '• Parcel photos, only when you attach one to a courier entry.\n\n'
             'Signing out removes the token from this device. The app has no analytics or advertising.'
         : 'This app is for authorised staff of your organisation. Use it only for work records you are allowed to create or view. '

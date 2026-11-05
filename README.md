@@ -1,4 +1,4 @@
-# Tea ERP (Pioji)
+# Pioji
 
 A Flutter app for iOS and Android for tea trading teams: samples, batches, offer lists, buyer allocation, the bid book, courier, contracts, sales and ex-factory reconciliation. It talks to the Tea ERP Laravel API.
 

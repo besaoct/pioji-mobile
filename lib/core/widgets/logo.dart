@@ -11,7 +11,7 @@ class AppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Tea ERP',
+      label: 'Pioji',
       image: true,
       child: CustomPaint(size: Size.square(size), painter: _LeafPainter(context.colors.accent)),
     );
