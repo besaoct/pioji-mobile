@@ -56,9 +56,20 @@ Start with [agent/README.md](agent/README.md). It links to:
 - [Code conventions](agent/CONVENTIONS.md)
 - [Current status and blockers](agent/STATUS.md)
 
-## Known blocker
+## API status
 
-The API currently rejects admin credentials at `POST /auth/login`, so the app can't sign in yet. See [agent/STATUS.md](agent/STATUS.md).
+Sign-in and every module's list, create and delete work against the staging API. Some endpoints still need server fixes:
+
+| Needs fixing | Effect in the app |
+|---|---|
+| Sales register list, detail and edit return 500 | Sales register list doesn't load; no sale edit |
+| Sample detail returns 500 | Sample detail shows the list's copy |
+| Sample, offer and ex-factory edits report success but don't save | Sample edit saves only remarks and arrival date; no edit screen for offers and ex-factory |
+| Samples ignore the arrival date and search filters | Home shows total samples, not today's |
+| Offers save only parties 1–5 | Add party is capped at 5 |
+| Some validation errors return 500 instead of 422, with stack traces | Generic error message |
+
+The full list of 22 items, what works, and which fixes need an app update: [agent/STATUS.md → API status](agent/STATUS.md#api-status).
 
 ## Releasing (Android)
 

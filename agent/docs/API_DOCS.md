@@ -7,7 +7,7 @@
 | **Format** | JSON (`multipart/form-data` only for photo uploads) |
 | **Last verified** | 2026-10-31 (signed in as admin; GETs and validation only) |
 
-> ⚠️ **Server bugs (2026-10-31).** Admin login now works. Three endpoints fail with 500 and expose SQL/stack details: `GET /sales-register`, `GET /sales-register/{id}` and `GET /samples/{id}`. See [Verified responses](#verified-responses-2026-10-31).
+> ⚠️ **Server bugs (updated 2026-11-05).** Admin login works. Sales register list, detail and edit, and sample detail return 500; some edits report success without saving. The current list is in `agent/STATUS.md` → API status.
 
 ---
 
@@ -758,8 +758,9 @@ Every create, edit and delete was run against the server with clearly marked tes
 
 ### Still missing
 
-| Method | Path | Today |
-|---|---|---|
+Edit and delete now exist for every module, and unknown `/api/v1/*` paths return a JSON 404. The remaining gaps and bugs are listed in `agent/STATUS.md` → API status.
+
+---|---|---|
 | PUT | `/{id}` on offer lists, batches, courier, contracts, sales, ex-factory | 405 |
 | DELETE | `/{id}` on every module except samples | 405 |
 | GET | `/dashboard/summary` (optional) | HTML 404 page, status 200 |
