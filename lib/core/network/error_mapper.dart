@@ -48,8 +48,8 @@ AppFailure mapError(Object error) {
         });
       }
       final msg = serverMessage ?? 'Check the highlighted fields.';
-      if (_looksDuplicate(msg) || fields.values.any(_looksDuplicate)) {
-        return DuplicateFailure(fields.values.firstWhere(_looksDuplicate, orElse: () => msg));
+      if (looksDuplicate(msg) || fields.values.any(looksDuplicate)) {
+        return DuplicateFailure(fields.values.firstWhere(looksDuplicate, orElse: () => msg));
       }
       return ValidationFailure(msg, fields);
   }
@@ -57,7 +57,7 @@ AppFailure mapError(Object error) {
   return ServerFailure(status);
 }
 
-bool _looksDuplicate(String text) {
+bool looksDuplicate(String text) {
   final t = text.toLowerCase();
   return t.contains('duplicate') || t.contains('already exists');
 }

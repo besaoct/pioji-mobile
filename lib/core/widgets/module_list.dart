@@ -114,15 +114,24 @@ class _ModuleListScreenState<T> extends ConsumerState<ModuleListScreen<T>> {
       SearchField(hint: widget.searchHint, initial: query.search, onChanged: queryCtl.setSearch),
       const SizedBox(height: AppSpace.md),
       if (seg != null) ...[
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Segmented<String>(
-            compact: seg.options.length > 4,
+        // Up to 4 options fill the width; more scroll sideways at their
+        // natural width (a stretched bar can't sit in a scroll view).
+        if (seg.options.length > 4)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Segmented<String>(
+              compact: true,
+              options: seg.options,
+              selected: query.params[seg.param] ?? '',
+              onChanged: (v) => queryCtl.setParam(seg.param, v),
+            ),
+          )
+        else
+          Segmented<String>(
             options: seg.options,
             selected: query.params[seg.param] ?? '',
             onChanged: (v) => queryCtl.setParam(seg.param, v),
           ),
-        ),
         const SizedBox(height: AppSpace.md),
       ],
       if (widget.filters.isNotEmpty || list.hasValue) _filterBar(context, c, query, queryCtl, list.value),

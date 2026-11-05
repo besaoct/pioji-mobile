@@ -735,6 +735,25 @@ Filters verified: `search`, `status`, `tab` (bid book), `date_from` / `date_to`,
 | 4 | Errors in general | Exception text returned to clients | Set `APP_DEBUG=false`; return a generic message |
 | 5 | `GET /samples?arrival_date=…` | Filter ignored: always returns every sample (verified 2026-11-05; `date`, `date_from`/`date_to` also ignored) | Apply the filter server-side. Until then the app's arrival filter and a "samples today" count can't work |
 
+
+### Write tests (2026-11-05)
+
+Every create, edit and delete was run against the server with clearly marked test records (date 31 Dec 2026, remarks "TEST – safe to delete"). All test records were deleted afterwards; the sample count is back to 28.
+
+| Module | Create | Edit (`PUT`) | Delete | Notes |
+|---|---|---|---|---|
+| Samples | ✅ | ⚠️ only `remarks` and `arrival_date` save; invoice, grade, prefix, garden, packages, weights, status and sample type are ignored (still answers "updated successfully") | ✅ | Duplicate invoice → 422 "…Set is_duplicate: true…"; resending with `is_duplicate: true` works. A sample assigned to buyers can't be deleted (500, should be 422) until its buyers are cleared. Missing id → 500 instead of 404 |
+| Batches | ✅ | ✅ `remarks`, `status` | ✅ (its samples become unbatched) | Status values are `open` and `completed` (not `closed`). `batch_date` is ignored when `sample_ids` are sent (dated today). `notes` is ignored; use `remarks`. Auto-batch response: `data.batches[].batch` |
+| Offer lists | ✅ | ⚠️ "updated successfully" but price and prompt days don't change, even with the full body | ✅ | Duplicate invoice → **HTTP 200** with `success: false`, `data: null`. `duplicate_action` override / reoffer / reject all work |
+| Allocation | ✅ single and bulk | — | clear with `buyer_ids: []` | Offers keep one `buyer`; samples keep `assigned_buyers[]`. Allocating overwrites the offer's `party_1` with the buyer name |
+| Bid book | ✅ | ✅ full body and status-only | ✅ | Lot without `buyer_id` is parked as unallocated. A deleted lot's GET returns 200 with `data: null` |
+| Courier | ✅ JSON and multipart with photo | ✅ | ✅ | Tracking number validated (letters and digits only). `posting_list_ids` are accepted but not linked |
+| Contracts | ✅ | ✅ (items are replaced) | ✅ | `expiry_date` before `effective_date` → 422 |
+| Sales register | ✅ | ❌ 500 (`garden` relation) | ✅ | List and detail also 500 |
+| Ex-factory | ✅ (reconciles on save) | ⚠️ "updated successfully" but `credit_days` didn't change | ✅ | CGST+SGST bill with `igst_amount: null` → 500 (DB constraint); leaving the key out works (the app leaves nulls out). A bill matching a sale on mark + invoice with equal packages and kg was still flagged `qty_mismatch` |
+| CSV export | ✅ includes new bills | — | — | |
+| Logout | ✅ token revoked (next call 401) | — | — | |
+
 **Dates** are sent in UTC, e.g. `2026-10-29T18:30:00.000000Z` means 30 Oct 2026 in India. Convert to local time before showing a date (the app does).
 
 ### Still missing

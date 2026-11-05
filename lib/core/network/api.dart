@@ -66,6 +66,22 @@ class Api {
   }
 
   Future<Response<dynamic>> _guard(Future<Response<dynamic>> Function() call) async {
+    final res = await _send(call);
+    _checkEnvelope(res);
+    return res;
+  }
+
+  /// Some failures come back as HTTP 200 with `success: false` (for example a
+  /// duplicate offer invoice), so the envelope is checked too.
+  static void _checkEnvelope(Response<dynamic> res) {
+    final body = res.data;
+    if (body is! Map || body['success'] != false) return;
+    final message = body['message']?.toString() ?? 'The server rejected this request.';
+    if (looksDuplicate(message)) throw DuplicateFailure(message);
+    throw ValidationFailure(message, const {});
+  }
+
+  Future<Response<dynamic>> _send(Future<Response<dynamic>> Function() call) async {
     try {
       return await call();
     } on DioException catch (e) {

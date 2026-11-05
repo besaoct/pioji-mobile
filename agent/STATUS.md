@@ -16,6 +16,7 @@ All screens in the spec exist and compile with zero analyzer issues:
 - Contracts: list, new contract with repeatable items and live totals, detail
 - Sales register: list, new sale with live amount, detail
 - Ex-factory: status summary tiles, list, CSV export + share, new bill (IGST / CGST+SGST with 5% fill), detail
+- Write paths tested 5 Nov 2026 (create, edit, delete for every module; details in `docs/API_DOCS.md` → Write tests)
 - Every detail screen loads by ID (`GET /{module}/{id}`): it shows the list copy at once, refreshes from the API, and works from a deep link
 - Grade pickers load `GET /grades`, falling back to a built-in list
 - More and Settings (theme, version, legal), sign out
@@ -27,9 +28,8 @@ On 31 Oct 2026, signed in as admin: every list, lookup and detail response was f
 
 ## Not verified
 
-- Creating, editing and deleting records (only empty-body validation was tried, to avoid writing data).
-- Allocation, auto-batch, logout and photo upload against the live server.
-- Run in the iOS Simulator (iPhone 17 Pro Max) on 5 Nov 2026, signed in: onboarding, sign-in validation, Home, all four tab lists, More, contracts list and detail, sales register error state, New sample form (garden search, 2-of-3 weights). Nothing was saved. Android has not been run.
+- Android has not been run.
+- In the app, only the sample create / edit / delete flow and batch screens were run on the simulator; the other forms were tested against the API with the app's exact request bodies.
 
 ## Blocked on the backend
 
@@ -39,7 +39,9 @@ Details in `docs/API_DOCS.md` → Verified responses → Server bugs.
 2. `GET /sales-register/{id}` and `GET /samples/{id}` return 500. Those detail screens show the list copy instead.
 3. Edit (`PUT`) is missing for offer lists, batches, courier, contracts, sales and ex-factory; delete is missing for everything except samples.
 4. `APP_DEBUG=false`, JSON 404 for unknown API paths.
-5. `GET /samples` ignores `arrival_date`, so Home shows the total sample count, not today's, and the Samples arrival filter has no effect.
+5. Edits that report success but don't save: samples (all fields except remarks and arrival date), offer lists (price, prompt days), ex-factory (credit days). Sales register edit returns 500.
+6. A duplicate offer invoice returns HTTP 200 with `success: false`; the app now treats that as a failure.
+7. `GET /samples` ignores `arrival_date`, so Home shows the total sample count, not today's, and the Samples arrival filter has no effect.
 
 ## Not built yet (from the spec)
 

@@ -46,7 +46,7 @@ class BatchesListScreen extends StatelessWidget {
         LinkButton(label: 'Auto-batch', onPressed: () => context.pushNamed(Routes.batchAuto)),
         AddButton(semanticLabel: 'New batch', onPressed: () => context.pushNamed(Routes.batchNew)),
       ],
-      segments: const SegmentConfig(param: 'status', options: {'': 'All', 'open': 'Open', 'closed': 'Closed'}),
+      segments: const SegmentConfig(param: 'status', options: {'': 'All', 'open': 'Open', 'completed': 'Completed'}),
       filters: const [DateFilter('date', 'Date')],
       itemBuilder: (context, b) => AppListRow(
         title: b.name,
@@ -58,7 +58,7 @@ class BatchesListScreen extends StatelessWidget {
           children: [
             Text('${b.count} / $kBatchCap', style: AppText.callout.copyWith(color: context.colors.textSecondary)),
             const SizedBox(height: 4),
-            StatusBadge(b.open ? 'Open' : 'Closed', tone: b.open ? Tone.accent : Tone.neutral),
+            StatusBadge(b.open ? 'Open' : 'Completed', tone: b.open ? Tone.accent : Tone.neutral),
           ],
         ),
       ),
@@ -264,7 +264,7 @@ class BatchDetailScreen extends StatelessWidget {
         GroupedSection(
           children: [
             InfoRow('Date', Fmt.day(b.date)),
-            InfoRow('Status', b.open ? 'Open' : 'Closed'),
+            InfoRow('Status', b.open ? 'Open' : 'Completed'),
             InfoRow('Samples', '${b.count} / $kBatchCap'),
             if (b.notes != null) InfoBlock('Notes', b.notes!),
           ],

@@ -33,7 +33,7 @@ class Batch {
       id: J.intOr(j['id'], 0),
       name: J.str(j['batch_number']) ?? J.str(j['batch_name']) ?? J.str(j['name']) ?? 'Batch #${j['id']}',
       date: J.date(j['batch_date'] ?? j['date']),
-      open: (J.str(j['status']) ?? 'open') == 'open',
+      open: (J.str(j['status']) ?? 'open') == 'open', // API statuses: open, completed
       notes: J.str(j['remarks']) ?? J.str(j['notes']),
       sampleCount: J.integer(j['samples_count'] ?? j['total_samples']),
       samples: samples,
@@ -54,7 +54,7 @@ class BatchesRepository {
       _api.post('/batches', cleanBody({
         'batch_name': name,
         'batch_date': Fmt.api(date),
-        'status': open ? 'open' : 'closed',
+        'status': open ? 'open' : 'completed',
         'notes': notes,
         'sample_ids': sampleIds,
       }));
@@ -62,8 +62,12 @@ class BatchesRepository {
   /// Returns the batches the server created, when it reports them.
   Future<List<Batch>> createForDate(DateTime date) async {
     final data = await _api.post('/batches/create-for-date', {'date': Fmt.api(date)});
+    // `{batches: [{batch: {...}}, …]}`
     final list = data is List ? data : (J.map(data)?['batches'] as List? ?? const []);
-    return list.whereType<Map<String, dynamic>>().map(Batch.fromJson).toList();
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map((e) => Batch.fromJson(J.map(e['batch']) ?? e))
+        .toList();
   }
 
   Future<List<Sample>> unbatched(DateTime date) async {

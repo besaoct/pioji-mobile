@@ -28,7 +28,9 @@ class OfferedItem {
   factory OfferedItem.fromJson(ItemType type, Map<String, dynamic> j) {
     final garden = J.nested(j, 'garden_name', 'garden', 'garden_name') ?? 'Lot #${j['id']}';
     final grade = J.code(j['grade']);
-    final buyersNode = j['assigned_buyers'] ?? j['buyers'] ?? j['allocated_buyers'];
+    // Samples carry `assigned_buyers[]`; offer lists carry one `buyer`.
+    final single = J.map(j['buyer']);
+    final buyersNode = j['assigned_buyers'] ?? j['buyers'] ?? j['allocated_buyers'] ?? (single == null ? null : [single]);
     return OfferedItem(
       type: type,
       id: J.intOr(j['id'], 0),

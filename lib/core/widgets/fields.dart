@@ -90,7 +90,7 @@ class FieldInput extends StatelessWidget {
                         autofillHints: autofillHints,
                         textCapitalization: textCapitalization,
                         style: AppText.body.copyWith(color: c.textPrimary),
-                        decoration: InputDecoration.collapsed(hintText: hint ?? label),
+                        decoration: InputDecoration(hintText: hint ?? label),
                       ),
                     ),
                     if (suffix != null)

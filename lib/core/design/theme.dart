@@ -9,10 +9,9 @@ ThemeData buildTheme(Brightness brightness) {
   final base = ThemeData(useMaterial3: true, brightness: brightness);
   const noOverlay = WidgetStatePropertyAll<Color>(Colors.transparent);
   final controlShape = const WidgetStatePropertyAll<OutlinedBorder>(AppRadius.controlBorder);
-  const noBorder = OutlineInputBorder(
-    borderSide: BorderSide.none,
-    borderRadius: BorderRadius.all(Radius.circular(AppRadius.control)),
-  );
+  // InputBorder.none: an outline border adds side gap padding, which would
+  // push input text out of line with its label.
+  const noBorder = InputBorder.none;
 
   return base.copyWith(
     scaffoldBackgroundColor: c.background,
