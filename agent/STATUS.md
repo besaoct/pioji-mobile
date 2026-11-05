@@ -9,7 +9,7 @@ All screens in the spec exist and compile with zero analyzer issues:
 - Home: 4 live counts, quick actions, a checklist driven by real counts, recent samples
 - Samples: list (status segments, arrival filter), new and edit sample (2-of-3 weights, duplicate "save anyway"), detail with delete
 - Batches: list, new batch (pick unbatched samples, 48 cap), auto-batch for a date, detail, edit (open/completed, notes), delete
-- Offer lists: list (date/grade/type filters), new offer (override / re-offer on duplicates), detail with delete
+- Offer lists: list (date/grade/type filters), new offer (override / re-offer on duplicates; up to 5 parties, each picked from buyers or typed), detail with delete
 - Offered today: day switcher, offer/sample tabs, single and multi-select buyer allocation
 - Bid book: tabbed card list, new/edit lot, detail with one-tap status change and delete
 - Courier: list, new entry (buyer address prefill, barcode scanner, photo, posting lists), detail, edit, delete
@@ -42,6 +42,7 @@ Details in `docs/API_DOCS.md` → Verified responses → Server bugs.
 4. `APP_DEBUG=false`, JSON 404 for unknown API paths.
 5. Edits that report success but don't save: samples (all fields except remarks and arrival date), offer lists (price, prompt days), ex-factory (credit days). Sales register edit returns 500.
 6. A duplicate offer invoice returns HTTP 200 with `success: false`; the app now treats that as a failure.
+8. `POST /offer-lists` saves only `party_1`–`party_5`; `party_6`–`party_10` exist on the record but are dropped. The app allows 5 (`_maxParties` in `offer_lists_screens.dart`).
 7. `GET /samples` ignores `arrival_date`, so Home shows the total sample count, not today's, and the Samples arrival filter has no effect.
 
 ## Not built yet (from the spec)

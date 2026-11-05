@@ -89,12 +89,13 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
   final _gross = TextEditingController();
   final _price = TextEditingController();
   final _prompt = TextEditingController();
-  final _p1 = TextEditingController();
-  final _p2 = TextEditingController();
+  /// The offer API saves party_1 … party_5 (6–10 are dropped on create).
+  static const _maxParties = 5;
+  final _parties = <String?>[null];
 
   @override
   void dispose() {
-    for (final c in [_prefix, _inv, _pkgs, _nett, _total, _gross, _price, _prompt, _p1, _p2]) {
+    for (final c in [_prefix, _inv, _pkgs, _nett, _total, _gross, _price, _prompt]) {
       c.dispose();
     }
     super.dispose();
@@ -116,8 +117,7 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
         'price': Fmt.parse(_price.text),
         'currency': 'INR',
         'prompt_days': int.tryParse(_prompt.text),
-        'party_1': _p1.text.trim(),
-        'party_2': _p2.text.trim(),
+        for (final (i, p) in _parties.whereType<String>().where((p) => p.trim().isNotEmpty).indexed) 'party_${i + 1}': p.trim(),
         'duplicate_action': duplicateAction,
       };
 
@@ -191,11 +191,31 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
         ),
         GroupedSection(
           label: 'Parties',
+          footer: const Text('Pick a buyer or type any name. Up to $_maxParties.'),
           children: [
-            FieldInput(label: 'Party 1', hint: 'Tata Tea', controller: _p1),
-            FieldInput(label: 'Party 2', hint: 'Wagh Bakri', controller: _p2, textInputAction: TextInputAction.done),
+            for (var i = 0; i < _parties.length; i++)
+              PartyPickerRow(
+                label: 'Party ${i + 1}',
+                value: _parties[i],
+                onChanged: (v) => setState(() {
+                  if (v == null && _parties.length > 1) {
+                    _parties.removeAt(i);
+                  } else {
+                    _parties[i] = v;
+                  }
+                }),
+              ),
           ],
         ),
+        if (_parties.length < _maxParties)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SecondaryButton(
+              label: 'Add party',
+              icon: CupertinoIcons.add,
+              onPressed: () => setState(() => _parties.add(null)),
+            ),
+          ),
       ],
     );
   }
@@ -236,10 +256,10 @@ class OfferDetailScreen extends StatelessWidget {
           children: [
             InfoRow('Price per kg', Fmt.money(o.price)),
             InfoRow('Prompt days', o.promptDays?.toString()),
-            InfoRow('Party 1', o.party1),
-            InfoRow('Party 2', o.party2),
           ],
         ),
+        if (o.parties.isNotEmpty)
+          GroupedSection(label: 'Parties', children: [for (final (i, p) in o.parties.indexed) InfoRow('Party ${i + 1}', p)]),
         if (o.buyers.isNotEmpty)
           GroupedSection(label: 'Allocated buyers', children: [for (final b in o.buyers) InfoRow(b, null)]),
         DeleteRecordButton(

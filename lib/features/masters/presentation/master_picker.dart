@@ -210,3 +210,124 @@ Future<int?> _askId(BuildContext context, String label, int? current) {
     ),
   );
 }
+
+/// A party is a buyer's name: pick one from `GET /buyers` or type any name
+/// (the offer API stores parties as text). Returns '' to clear.
+class PartyPickerRow extends ConsumerWidget {
+  const PartyPickerRow({super.key, required this.label, required this.value, required this.onChanged});
+
+  final String label;
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final v = value?.trim();
+    return ValueRow(
+      label: label,
+      value: v == null || v.isEmpty ? null : v,
+      placeholder: 'Buyer or name',
+      onTap: () async {
+        final picked = await showModalBottomSheet<String>(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) => _PartySheet(title: label, current: v),
+        );
+        if (picked != null) onChanged(picked.isEmpty ? null : picked);
+      },
+    );
+  }
+}
+
+class _PartySheet extends ConsumerStatefulWidget {
+  const _PartySheet({required this.title, this.current});
+  final String title;
+  final String? current;
+
+  @override
+  ConsumerState<_PartySheet> createState() => _PartySheetState();
+}
+
+class _PartySheetState extends ConsumerState<_PartySheet> {
+  String _q = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final buyers = ref.watch(buyersProvider);
+    final q = _q.trim();
+    final all = buyers.value ?? const <MasterItem>[];
+    final matches = q.isEmpty ? all : all.where((b) => b.name.toLowerCase().contains(q.toLowerCase())).toList();
+    final exact = all.any((b) => b.name.toLowerCase() == q.toLowerCase());
+    final hasCurrent = widget.current != null && widget.current!.isNotEmpty;
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, MediaQuery.of(context).viewInsets.bottom),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(widget.title, style: AppText.title),
+              const SizedBox(height: AppSpace.md),
+              SearchField(hint: 'Search buyers or type a name', onChanged: (s) => setState(() => _q = s)),
+              const SizedBox(height: AppSpace.md),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (q.isNotEmpty && !exact || hasCurrent)
+                        GroupedSection(
+                          children: [
+                            if (q.isNotEmpty && !exact)
+                              AppListRow(
+                                title: 'Use “$q”',
+                                subtitle: 'Not in the buyers list',
+                                minHeight: 48,
+                                titleStyle: AppText.body.copyWith(color: c.accent),
+                                leading: Icon(CupertinoIcons.pencil, color: c.accent, size: 20),
+                                onTap: () => Navigator.pop(context, q),
+                              ),
+                            if (hasCurrent)
+                              AppListRow(
+                                title: 'Clear',
+                                minHeight: 48,
+                                titleStyle: AppText.body.copyWith(color: c.danger),
+                                onTap: () => Navigator.pop(context, ''),
+                              ),
+                          ],
+                        ),
+                      if (buyers.isLoading && all.isEmpty)
+                        const Padding(padding: EdgeInsets.all(AppSpace.xl), child: Center(child: CupertinoActivityIndicator()))
+                      else if (matches.isNotEmpty)
+                        GroupedSection(
+                          label: 'Buyers',
+                          children: [
+                            for (final b in matches)
+                              AppListRow(
+                                title: b.name,
+                                subtitle: b.subtitle,
+                                minHeight: 48,
+                                titleStyle: AppText.body,
+                                onTap: () => Navigator.pop(context, b.name),
+                                trailing: b.name == widget.current ? Icon(CupertinoIcons.checkmark_alt, color: c.accent, size: 20) : null,
+                              ),
+                          ],
+                        )
+                      else if (q.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(AppSpace.xl),
+                          child: Center(child: Text('No buyers yet. Type a name above.', style: AppText.callout.copyWith(color: c.textTertiary))),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

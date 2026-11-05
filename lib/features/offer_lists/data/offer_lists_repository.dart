@@ -25,8 +25,7 @@ class OfferList {
     this.price,
     this.currency,
     this.promptDays,
-    this.party1,
-    this.party2,
+    this.parties = const [],
     this.buyers = const [],
   });
 
@@ -46,8 +45,8 @@ class OfferList {
   final double? price;
   final String? currency;
   final int? promptDays;
-  final String? party1;
-  final String? party2;
+  /// party_1 … party_10, filled ones only, in order.
+  final List<String> parties;
   final List<String> buyers;
 
   String get title => [gardenName ?? 'Garden #${gardenId ?? '–'}', ?grade].join(' · ');
@@ -69,8 +68,10 @@ class OfferList {
         price: J.dbl(j['price']),
         currency: J.str(j['currency']),
         promptDays: J.integer(j['prompt_days']),
-        party1: J.str(j['party_1']),
-        party2: J.str(j['party_2']),
+        parties: [
+          for (var i = 1; i <= 10; i++)
+            if ((J.str(j['party_$i']) ?? '').trim().isNotEmpty) J.str(j['party_$i'])!.trim(),
+        ],
         buyers: (j['buyers'] is List ? j['buyers'] as List : const [])
             .map((b) => b is Map ? J.str(b['name']) : J.str(b))
             .whereType<String>()

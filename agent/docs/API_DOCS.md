@@ -200,7 +200,7 @@ Store `data.token` securely (`flutter_secure_storage`) and send it as `Authoriza
 | `price` | number | | |
 | `currency` | string | | `INR` |
 | `prompt_days` | int | | |
-| `party_1`, `party_2` | string | | |
+| `party_1` … `party_5` | string | | party (buyer) names as text. The record has `party_6`–`party_10` too, but create drops them (tested 5 Nov 2026) |
 | `duplicate_action` | string | | `override` \| `reoffer` \| `reject` — what to do if the invoice already exists |
 
 ```json
