@@ -1,0 +1,111 @@
+# Builds the signed Android APK on GitHub.
+#
+# Release: push a tag like v0.1.1 → builds Pioji-0.1.1.apk and attaches it
+#          to a GitHub Release for that tag (created if missing).
+# Manual:  Actions → Android release → Run workflow → the APK is kept as a
+#          workflow artifact for 14 days (no release).
+#
+# Needs these repository secrets:
+#   ANDROID_KEYSTORE_BASE64  base64 of android/app/pioji-release.jks
+#   ANDROID_KEYSTORE_PASSWORD
+#   ANDROID_KEY_PASSWORD
+#   ANDROID_KEY_ALIAS
+name: Android release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.2'
+          channel: stable
+          cache: true
+
+      - name: Version
+        id: v
+        run: |
+          base=$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then name="${GITHUB_REF_NAME#v}"; else name="$base"; fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          # +1: build 1 was the first APK, built locally.
+          code=$((GITHUB_RUN_NUMBER + 1))
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Building $name ($code)"
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then echo "::error::ANDROID_KEYSTORE_BASE64 secret is missing"; exit 1; fi
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/pioji-release.jks
+          {
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyPassword=$KEY_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "storeFile=pioji-release.jks"
+          } > android/key.properties
+
+      - name: Build APK
+        run: |
+          flutter build apk --release \
+            --build-name=${{ steps.v.outputs.name }} \
+            --build-number=${{ steps.v.outputs.code }}
+          mv build/app/outputs/flutter-apk/app-release.apk "Pioji-${{ steps.v.outputs.name }}.apk"
+
+      - name: Check signature
+        run: |
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$apksigner" verify --print-certs "Pioji-${{ steps.v.outputs.name }}.apk" | grep -E 'DN|SHA-256'
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          apk="Pioji-${{ steps.v.outputs.name }}.apk"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$apk" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$apk" --title "Pioji ${{ steps.v.outputs.name }}" --generate-notes
+          fi
+
+      - name: Keep as artifact
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pioji-${{ steps.v.outputs.name }}-${{ steps.v.outputs.code }}
+          path: Pioji-*.apk
+          retention-days: 14
+
+      - name: Remove signing key
+        if: always()
+        run: rm -f android/app/pioji-release.jks android/key.properties

@@ -55,6 +55,23 @@ Start with [agent/README.md](agent/README.md). It links to:
 
 The API currently rejects admin credentials at `POST /auth/login`, so the app can't sign in yet. See [agent/STATUS.md](agent/STATUS.md).
 
+## Releasing (Android)
+
+GitHub Actions builds and signs the APK; nothing needs building locally.
+
+1. Push your changes to `main`.
+2. Tag the version and push the tag:
+
+   ```bash
+   git tag v0.1.1 && git push origin v0.1.1
+   ```
+
+3. The **Android release** workflow builds `Pioji-0.1.1.apk` and attaches it to the `v0.1.1` GitHub Release (about 10 minutes).
+
+The version name comes from the tag; the build number goes up by one with each run. To get a test APK without a release, open **Actions → Android release → Run workflow**; the APK is kept as a run artifact for 14 days.
+
+Signing uses four repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD` and `ANDROID_KEY_ALIAS`. Keep an offline backup of the keystore (`android/app/pioji-release.jks`): if it is lost, installed apps can't be updated.
+
 ## Regenerating icons
 
 Edit `assets/icon/*.svg`, export each to a 1024 px PNG (for example `rsvg-convert -w 1024 -h 1024 icon.svg -o icon.png`), then:
