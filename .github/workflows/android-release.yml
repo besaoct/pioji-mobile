@@ -92,10 +92,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           apk="Pioji-${{ steps.v.outputs.name }}.apk"
+          # Same file under a fixed name, so releases/latest/download/Pioji.apk
+          # (the README link) always gets the newest build.
+          cp "$apk" Pioji.apk
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "$apk" --clobber
+            gh release upload "$GITHUB_REF_NAME" "$apk" Pioji.apk --clobber
           else
-            gh release create "$GITHUB_REF_NAME" "$apk" --title "Pioji ${{ steps.v.outputs.name }}" --generate-notes
+            gh release create "$GITHUB_REF_NAME" "$apk" Pioji.apk --title "Pioji ${{ steps.v.outputs.name }}" --generate-notes
           fi
 
       - name: Keep as artifact
@@ -103,7 +106,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Pioji-${{ steps.v.outputs.name }}-${{ steps.v.outputs.code }}
-          path: Pioji-*.apk
+          path: Pioji-${{ steps.v.outputs.name }}.apk
           retention-days: 14
 
       - name: Remove signing key

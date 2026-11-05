@@ -1,5 +1,10 @@
 # Pioji
 
+[![Download APK](https://img.shields.io/badge/Android-Download%20APK-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/besaoct/pioji-mobile/releases/latest/download/Pioji.apk)
+[![Android release](https://github.com/besaoct/pioji-mobile/actions/workflows/android-release.yml/badge.svg)](https://github.com/besaoct/pioji-mobile/actions/workflows/android-release.yml)
+
+**[Download the latest APK](https://github.com/besaoct/pioji-mobile/releases/latest/download/Pioji.apk)** · [All releases](https://github.com/besaoct/pioji-mobile/releases) (sign in to GitHub with access to this repo)
+
 A Flutter app for iOS and Android for tea trading teams: samples, batches, offer lists, buyer allocation, the bid book, courier, contracts, sales and ex-factory reconciliation. It talks to the Tea ERP Laravel API.
 
 - **App ID:** `com.gitcs.pioji` (iOS and Android)
