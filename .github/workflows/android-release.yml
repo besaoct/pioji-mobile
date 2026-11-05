@@ -1,7 +1,9 @@
 # Builds the signed Android APK on GitHub.
 #
-# Release: push a tag like v0.1.1 → builds Pioji-0.1.1.apk and attaches it
-#          to a GitHub Release for that tag (created if missing).
+# Version bump: push to main with a new `version:` in pubspec.yaml (e.g.
+#          0.1.2+1) → tags v0.1.2, builds Pioji-0.1.2.apk and publishes the
+#          v0.1.2 GitHub Release. If that tag already exists, nothing runs.
+# Tag:     push a tag like v0.1.2 by hand → same build and release.
 # Manual:  Actions → Android release → Run workflow → the APK is kept as a
 #          workflow artifact for 14 days (no release).
 #
@@ -14,6 +16,8 @@ name: Android release
 
 on:
   push:
+    branches: [main]
+    paths: [pubspec.yaml]
     tags: ['v*']
   workflow_dispatch:
 
@@ -22,12 +26,48 @@ permissions:
 
 concurrency:
   group: android-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.v.outputs.name }}
+      tag: ${{ steps.v.outputs.tag }}
+      release: ${{ steps.v.outputs.release }}
+      build: ${{ steps.v.outputs.build }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: v
+        run: |
+          base=$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            name="${GITHUB_REF_NAME#v}"; release=true; build=true
+          elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            name="$base"
+            if git ls-remote --exit-code --tags origin "refs/tags/v$name" >/dev/null; then
+              echo "v$name is already released; nothing to do."
+              release=false; build=false
+            else
+              release=true; build=true
+            fi
+          else
+            name="$base"; release=false; build=true
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "tag=v$name" >> "$GITHUB_OUTPUT"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          echo "Version $name · release=$release · build=$build"
+
   apk:
+    needs: version
+    if: needs.version.outputs.build == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      NAME: ${{ needs.version.outputs.name }}
+      TAG: ${{ needs.version.outputs.tag }}
     steps:
       - uses: actions/checkout@v5
 
@@ -42,17 +82,6 @@ jobs:
           flutter-version: '3.44.2'
           channel: stable
           cache: true
-
-      - name: Version
-        id: v
-        run: |
-          base=$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then name="${GITHUB_REF_NAME#v}"; else name="$base"; fi
-          echo "name=$name" >> "$GITHUB_OUTPUT"
-          # +1: build 1 was the first APK, built locally.
-          code=$((GITHUB_RUN_NUMBER + 1))
-          echo "code=$code" >> "$GITHUB_OUTPUT"
-          echo "Building $name ($code)"
 
       - run: flutter pub get
       - run: flutter analyze
@@ -76,37 +105,39 @@ jobs:
 
       - name: Build APK
         run: |
-          flutter build apk --release \
-            --build-name=${{ steps.v.outputs.name }} \
-            --build-number=${{ steps.v.outputs.code }}
-          mv build/app/outputs/flutter-apk/app-release.apk "Pioji-${{ steps.v.outputs.name }}.apk"
+          # Build number goes up every run (+1: build 1 was built locally).
+          code=$((GITHUB_RUN_NUMBER + 1))
+          echo "Building $NAME ($code)"
+          flutter build apk --release --build-name="$NAME" --build-number="$code"
+          mv build/app/outputs/flutter-apk/app-release.apk "Pioji-$NAME.apk"
 
       - name: Check signature
         run: |
           apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
-          "$apksigner" verify --print-certs "Pioji-${{ steps.v.outputs.name }}.apk" | grep -E 'DN|SHA-256'
+          "$apksigner" verify --print-certs "Pioji-$NAME.apk" | grep -E 'DN|SHA-256'
 
-      - name: Attach to release
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Publish release
+        if: needs.version.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          apk="Pioji-${{ steps.v.outputs.name }}.apk"
           # Same file under a fixed name, so releases/latest/download/Pioji.apk
           # (the README link) always gets the newest build.
-          cp "$apk" Pioji.apk
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "$apk" Pioji.apk --clobber
+          cp "Pioji-$NAME.apk" Pioji.apk
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "Pioji-$NAME.apk" Pioji.apk --clobber
           else
-            gh release create "$GITHUB_REF_NAME" "$apk" Pioji.apk --title "Pioji ${{ steps.v.outputs.name }}" --generate-notes
+            # Creates the tag on this commit when it doesn't exist yet.
+            gh release create "$TAG" "Pioji-$NAME.apk" Pioji.apk \
+              --target "$GITHUB_SHA" --title "Pioji $NAME" --generate-notes
           fi
 
       - name: Keep as artifact
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        if: needs.version.outputs.release != 'true'
         uses: actions/upload-artifact@v5
         with:
-          name: Pioji-${{ steps.v.outputs.name }}-${{ steps.v.outputs.code }}
-          path: Pioji-${{ steps.v.outputs.name }}.apk
+          name: Pioji-${{ needs.version.outputs.name }}-${{ github.run_number }}
+          path: Pioji-${{ needs.version.outputs.name }}.apk
           retention-days: 14
 
       - name: Remove signing key

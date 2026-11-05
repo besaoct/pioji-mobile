@@ -62,18 +62,16 @@ The API currently rejects admin credentials at `POST /auth/login`, so the app ca
 
 ## Releasing (Android)
 
-GitHub Actions builds and signs the APK; nothing needs building locally.
+GitHub Actions builds, signs and publishes the APK; nothing needs building locally.
 
-1. Push your changes to `main`.
-2. Tag the version and push the tag:
+1. Bump `version:` in `pubspec.yaml` (e.g. `0.1.1+1` → `0.1.2+1`).
+2. Commit and push to `main`.
 
-   ```bash
-   git tag v0.1.1 && git push origin v0.1.1
-   ```
+The **Android release** workflow sees the new version, tags `v0.1.2`, builds `Pioji-0.1.2.apk` and publishes the `v0.1.2` GitHub Release (about 10–15 minutes). Pushes that don't change the version, or that change it to one already released, build nothing.
 
-3. The **Android release** workflow builds `Pioji-0.1.1.apk` and attaches it to the `v0.1.1` GitHub Release (about 10 minutes).
-
-The version name comes from the tag; the build number goes up by one with each run. To get a test APK without a release, open **Actions → Android release → Run workflow**; the APK is kept as a run artifact for 14 days.
+- Only the version name (`0.1.2`) matters; the build number is set by the workflow and goes up with every run.
+- Pushing a `v*` tag by hand also builds and releases.
+- For a test APK without a release: **Actions → Android release → Run workflow**. The APK is kept as a run artifact for 14 days.
 
 Signing uses four repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD` and `ANDROID_KEY_ALIAS`. Keep an offline backup of the keystore (`android/app/pioji-release.jks`): if it is lost, installed apps can't be updated.
 

@@ -1,7 +1,7 @@
 name: tea_erp
 description: "Pioji, the tea trading mobile app for iOS and Android."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.1.1+1
 
 environment:
   sdk: ^3.12.2
