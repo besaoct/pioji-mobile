@@ -70,25 +70,29 @@ class OfferListsScreen extends StatelessWidget {
 }
 
 class OfferFormScreen extends ConsumerStatefulWidget {
-  const OfferFormScreen({super.key});
+  const OfferFormScreen({super.key, this.editing});
+
+  /// The offer being edited, or null for a new one.
+  final OfferList? editing;
 
   @override
   ConsumerState<OfferFormScreen> createState() => _OfferFormScreenState();
 }
 
 class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubmit {
-  DateTime _date = DateTime.now();
-  DateTime? _packing;
-  MasterItem? _garden;
-  String? _grade;
-  final _prefix = TextEditingController();
-  final _inv = TextEditingController();
-  final _pkgs = TextEditingController();
-  final _nett = TextEditingController();
-  final _total = TextEditingController();
-  final _gross = TextEditingController();
-  final _price = TextEditingController();
-  final _prompt = TextEditingController();
+  late final OfferList? _e = widget.editing;
+  late DateTime _date = _e?.date ?? DateTime.now();
+  late DateTime? _packing = _e?.packingDate;
+  late MasterItem? _garden = _e?.gardenId == null ? null : MasterItem(_e!.gardenId!, _e.gardenName ?? '#${_e.gardenId}');
+  late String? _grade = _e?.grade;
+  late final _prefix = TextEditingController(text: _e?.invPrefix);
+  late final _inv = TextEditingController(text: _e?.invNo);
+  late final _pkgs = TextEditingController(text: Fmt.editable(_e?.pkgs));
+  late final _nett = TextEditingController(text: Fmt.editable(_e?.nett));
+  late final _total = TextEditingController(text: Fmt.editable(_e?.totalKgs));
+  late final _gross = TextEditingController(text: Fmt.editable(_e?.grossWeight));
+  late final _price = TextEditingController(text: Fmt.editable(_e?.price));
+  late final _prompt = TextEditingController(text: _e?.promptDays?.toString());
   /// The offer API saves party_1 … party_5 (6–10 are dropped on create).
   static const _maxParties = 5;
   final _parties = <String?>[null];
@@ -112,20 +116,27 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
         'nett': Fmt.parse(_nett.text),
         'ttl_kgs': Fmt.parse(_total.text),
         'gross_weight': Fmt.parse(_gross.text),
-        'd_o_packing': _packing == null ? null : Fmt.api(_packing!),
+        if (_e == null) 'd_o_packing': _packing == null ? null : Fmt.api(_packing!),
         'type': 'Tea',
         'price': Fmt.parse(_price.text),
         'currency': 'INR',
         'prompt_days': int.tryParse(_prompt.text),
-        for (final (i, p) in _parties.whereType<String>().where((p) => p.trim().isNotEmpty).indexed) 'party_${i + 1}': p.trim(),
-        'duplicate_action': duplicateAction,
+        // Parties and the packing date don't save on edit, so they're only sent on create.
+        if (_e == null) ...{
+          for (final (i, p) in _parties.whereType<String>().where((p) => p.trim().isNotEmpty).indexed) 'party_${i + 1}': p.trim(),
+          'duplicate_action': duplicateAction,
+        },
       };
 
   Future<void> _save() async {
     final repo = ref.read(offerListsRepositoryProvider);
     final ok = await submit<bool>(
       () async {
-        await repo.create(_body());
+        if (_e == null) {
+          await repo.create(_body());
+        } else {
+          await repo.update(_e.id, _body());
+        }
         return true;
       },
       clientErrors: {
@@ -149,16 +160,20 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
     if (ok == true && mounted) {
       ref.invalidate(offerListsListProvider);
       refreshSummaries(ref);
-      context.toast('Offer saved');
-      context.pop();
+      context.toast(_e == null ? 'Offer saved' : 'Offer updated');
+      if (_e == null) {
+        context.pop();
+      } else {
+        context.goNamed(Routes.offers);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return FormScaffold(
-      title: 'New offer',
-      submitLabel: 'Save offer',
+      title: _e == null ? 'New offer' : 'Edit offer',
+      submitLabel: _e == null ? 'Save offer' : 'Save changes',
       submitting: submitting,
       onSubmit: _save,
       children: [
@@ -179,7 +194,10 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
         GroupedSection(
           children: [
             FieldInput(label: 'Gross weight', hint: '720', controller: _gross, suffix: 'kg', keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: decimalOnly),
-            DateRow(label: 'Date of packing', value: _packing, onChanged: (d) => setState(() => _packing = d)),
+            if (_e == null)
+              DateRow(label: 'Date of packing', value: _packing, onChanged: (d) => setState(() => _packing = d))
+            else
+              InfoRow('Date of packing', Fmt.day(_e.packingDate)),
           ],
         ),
         GroupedSection(
@@ -189,33 +207,44 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
             FieldInput(label: 'Prompt days', hint: '14', controller: _prompt, keyboardType: TextInputType.number, inputFormatters: digitsOnly),
           ],
         ),
-        GroupedSection(
-          label: 'Parties',
-          footer: const Text('Pick a buyer or type any name. Up to $_maxParties.'),
-          children: [
-            for (var i = 0; i < _parties.length; i++)
-              PartyPickerRow(
-                label: 'Party ${i + 1}',
-                value: _parties[i],
-                onChanged: (v) => setState(() {
-                  if (v == null && _parties.length > 1) {
-                    _parties.removeAt(i);
-                  } else {
-                    _parties[i] = v;
-                  }
-                }),
-              ),
-          ],
-        ),
-        if (_parties.length < _maxParties)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: SecondaryButton(
-              label: 'Add party',
-              icon: CupertinoIcons.add,
-              onPressed: () => setState(() => _parties.add(null)),
-            ),
+        if (_e != null)
+          GroupedSection(
+            label: 'Parties',
+            footer: const Text("Parties and the packing date can't be changed after the offer is saved."),
+            children: [
+              if (_e.parties.isEmpty) const InfoRow('None', null),
+              for (final (i, p) in _e.parties.indexed) InfoRow('Party ${i + 1}', p),
+            ],
+          )
+        else ...[
+          GroupedSection(
+            label: 'Parties',
+            footer: const Text('Pick a buyer or type any name. Up to $_maxParties.'),
+            children: [
+              for (var i = 0; i < _parties.length; i++)
+                PartyPickerRow(
+                  label: 'Party ${i + 1}',
+                  value: _parties[i],
+                  onChanged: (v) => setState(() {
+                    if (v == null && _parties.length > 1) {
+                      _parties.removeAt(i);
+                    } else {
+                      _parties[i] = v;
+                    }
+                  }),
+                ),
+            ],
           ),
+          if (_parties.length < _maxParties)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SecondaryButton(
+                label: 'Add party',
+                icon: CupertinoIcons.add,
+                onPressed: () => setState(() => _parties.add(null)),
+              ),
+            ),
+        ],
       ],
     );
   }
@@ -231,6 +260,9 @@ class OfferDetailScreen extends StatelessWidget {
     if (o == null) return const MissingItemScreen(what: 'offer');
     return DetailScaffold(
       title: o.gardenName ?? 'Offer',
+      actions: [
+        LinkButton(label: 'Edit', onPressed: () => context.pushNamed(Routes.offerEdit, pathParameters: {'id': '${o.id}'}, extra: o)),
+      ],
       children: [
         GroupedSection(
           label: 'Lot',

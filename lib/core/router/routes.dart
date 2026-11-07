@@ -19,6 +19,7 @@ abstract final class Routes {
 
   static const offers = 'offers';
   static const offerNew = 'offerNew';
+  static const offerEdit = 'offerEdit';
   static const offerDetail = 'offerDetail';
   static const offeredToday = 'offeredToday';
 
@@ -39,8 +40,10 @@ abstract final class Routes {
   static const sales = 'sales';
   static const salesNew = 'salesNew';
   static const salesDetail = 'salesDetail';
+  static const salesEdit = 'salesEdit';
   static const exFactory = 'exFactory';
   static const exFactoryNew = 'exFactoryNew';
   static const exFactoryDetail = 'exFactoryDetail';
+  static const exFactoryEdit = 'exFactoryEdit';
   static const settings = 'settings';
 }

@@ -54,8 +54,11 @@ class DuplicateFailure extends AppFailure {
 }
 
 class ServerFailure extends AppFailure {
-  const ServerFailure([this.status]);
+  const ServerFailure([this.status, this.serverMessage]);
   final int? status;
+
+  /// The server's own message. Not shown as is: on 500s it can contain SQL.
+  final String? serverMessage;
   @override
   String get message => 'Something went wrong on our side. Try again.';
 }

@@ -124,7 +124,10 @@ class _ExFactoryListScreenState extends ConsumerState<ExFactoryListScreen> {
 }
 
 class ExFactoryFormScreen extends ConsumerStatefulWidget {
-  const ExFactoryFormScreen({super.key});
+  const ExFactoryFormScreen({super.key, this.editing});
+
+  /// The bill being edited, or null for a new one.
+  final ExFactoryBill? editing;
 
   @override
   ConsumerState<ExFactoryFormScreen> createState() => _ExFactoryFormScreenState();
@@ -132,24 +135,25 @@ class ExFactoryFormScreen extends ConsumerStatefulWidget {
 
 class _ExFactoryFormScreenState extends ConsumerState<ExFactoryFormScreen> with FormSubmit {
   static const _gstRate = 0.05;
-  DateTime _date = DateTime.now();
-  DateTime? _cnDate;
-  MasterItem? _supplier;
-  bool _igst = true;
-  bool _totalEdited = false;
-  final _mark = TextEditingController();
-  final _prefix = TextEditingController();
-  final _inv = TextEditingController();
-  final _pkgs = TextEditingController();
-  final _nett = TextEditingController();
-  final _taxable = TextEditingController();
-  final _igstAmt = TextEditingController();
-  final _cgstAmt = TextEditingController();
-  final _sgstAmt = TextEditingController();
-  final _total = TextEditingController();
-  final _cn = TextEditingController();
-  final _transport = TextEditingController();
-  final _credit = TextEditingController();
+  late final ExFactoryBill? _e = widget.editing;
+  late DateTime _date = _e?.billDate ?? DateTime.now();
+  late DateTime? _cnDate = _e?.cnDate;
+  late MasterItem? _supplier = _e?.supplierId == null ? null : MasterItem(_e!.supplierId!, _e.supplierName ?? '#${_e.supplierId}');
+  late bool _igst = _e?.gstType != 'cgst_sgst';
+  late bool _totalEdited = _e != null;
+  late final _mark = TextEditingController(text: _e?.mark);
+  late final _prefix = TextEditingController(text: _e?.invoicePrefix);
+  late final _inv = TextEditingController(text: _e?.invoiceNo);
+  late final _pkgs = TextEditingController(text: _e?.pkgs?.toString());
+  late final _nett = TextEditingController(text: Fmt.editable(_e?.nett));
+  late final _taxable = TextEditingController(text: Fmt.editable(_e?.taxableValue));
+  late final _igstAmt = TextEditingController(text: Fmt.editable(_e?.igst));
+  late final _cgstAmt = TextEditingController(text: Fmt.editable(_e?.cgst));
+  late final _sgstAmt = TextEditingController(text: Fmt.editable(_e?.sgst));
+  late final _total = TextEditingController(text: Fmt.editable(_e?.total));
+  late final _cn = TextEditingController(text: _e?.cnNumber);
+  late final _transport = TextEditingController(text: _e?.transport);
+  late final _credit = TextEditingController(text: _e?.creditDays?.toString());
 
   @override
   void dispose() {
@@ -185,7 +189,8 @@ class _ExFactoryFormScreenState extends ConsumerState<ExFactoryFormScreen> with 
 
   Future<void> _save() async {
     final res = await submit<({ExFactoryBill? bill})>(
-      () async => (bill: await ref.read(exFactoryRepositoryProvider).create({
+      () async {
+        final body = {
         'bill_date': Fmt.api(_date),
         'mark': _mark.text.trim(),
         'invoice_no': _inv.text.trim(),
@@ -195,15 +200,24 @@ class _ExFactoryFormScreenState extends ConsumerState<ExFactoryFormScreen> with 
         'nett': Fmt.parse(_nett.text),
         'taxable_value': Fmt.parse(_taxable.text),
         'gst_type': _igst ? 'igst' : 'cgst_sgst',
-        'igst_amount': _igst ? Fmt.parse(_igstAmt.text) : null,
-        'cgst_amount': _igst ? null : Fmt.parse(_cgstAmt.text),
-        'sgst_amount': _igst ? null : Fmt.parse(_sgstAmt.text),
+        // The unused type is sent as 0: the server rejects null, and on edit
+        // leaving it out would keep the old amount.
+        'igst_amount': _igst ? Fmt.parse(_igstAmt.text) : 0,
+        'cgst_amount': _igst ? 0 : Fmt.parse(_cgstAmt.text),
+        'sgst_amount': _igst ? 0 : Fmt.parse(_sgstAmt.text),
         'total_bill_value': Fmt.parse(_total.text),
         'cn_number': _cn.text.trim(),
         'cn_date': _cnDate == null ? null : Fmt.api(_cnDate!),
         'transport': _transport.text.trim(),
         'credit_days': int.tryParse(_credit.text),
-      })),
+        };
+        final repo = ref.read(exFactoryRepositoryProvider);
+        if (_e != null) {
+          await repo.update(_e.id, body);
+          return (bill: null);
+        }
+        return (bill: await repo.create(body));
+      },
       clientErrors: {
         if (_mark.text.trim().isEmpty) 'mark': 'Enter the mark.',
         if (_inv.text.trim().isEmpty) 'invoice_no': 'Enter the invoice number.',
@@ -216,6 +230,11 @@ class _ExFactoryFormScreenState extends ConsumerState<ExFactoryFormScreen> with 
     ref.invalidate(exFactoryListProvider);
     ref.invalidate(exFactoryMetricsProvider);
     refreshSummaries(ref);
+    if (_e != null) {
+      context.toast('Bill updated');
+      context.goNamed(Routes.exFactory);
+      return;
+    }
     final s = res.bill?.status;
     context.toast(s == null ? 'Bill saved' : 'Bill saved · ${s.label}');
     context.pop();
@@ -225,8 +244,8 @@ class _ExFactoryFormScreenState extends ConsumerState<ExFactoryFormScreen> with 
   Widget build(BuildContext context) {
     TextInputType dec() => const TextInputType.numberWithOptions(decimal: true);
     return FormScaffold(
-      title: 'New bill',
-      submitLabel: 'Save bill',
+      title: _e == null ? 'New bill' : 'Edit bill',
+      submitLabel: _e == null ? 'Save bill' : 'Save changes',
       submitting: submitting,
       onSubmit: _save,
       children: [
@@ -312,6 +331,9 @@ class ExFactoryDetailScreen extends StatelessWidget {
     if (b == null) return const MissingItemScreen(what: 'bill');
     return DetailScaffold(
       title: b.billNo ?? b.mark ?? 'Bill',
+      actions: [
+        LinkButton(label: 'Edit', onPressed: () => context.pushNamed(Routes.exFactoryEdit, pathParameters: {'id': '${b.id}'}, extra: b)),
+      ],
       children: [
         AppCard(
           padding: const EdgeInsets.all(16),
@@ -345,7 +367,7 @@ class ExFactoryDetailScreen extends StatelessWidget {
         GroupedSection(
           label: 'Dispatch',
           children: [
-            InfoRow('CN number', b.cnNumber),
+            InfoRow('CN', [b.cnNumber, if (b.cnDate != null) Fmt.day(b.cnDate)].whereType<String>().join(' · ')),
             InfoRow('Transport', b.transport),
             InfoRow('Credit days', b.creditDays?.toString()),
           ],

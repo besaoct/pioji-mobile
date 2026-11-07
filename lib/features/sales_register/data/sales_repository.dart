@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/app_failure.dart';
 import '../../../core/list/list_query.dart';
 import '../../../core/list/paged_notifier.dart';
 import '../../../core/network/api.dart';
@@ -25,6 +26,7 @@ enum SaleStatus {
 class SaleEntry {
   const SaleEntry({
     required this.id,
+    this.buyerId,
     this.buyerName,
     this.grade,
     this.rate,
@@ -43,6 +45,7 @@ class SaleEntry {
   });
 
   final int id;
+  final int? buyerId;
   final String? buyerName;
   final String? grade;
   final double? rate;
@@ -63,6 +66,7 @@ class SaleEntry {
 
   factory SaleEntry.fromJson(Map<String, dynamic> j) => SaleEntry(
         id: J.intOr(j['id'], 0),
+        buyerId: J.integer(j['buyer_id']) ?? J.integer((j['buyer'] as Map?)?['id']),
         buyerName: J.nested(j, 'buyer_name', 'buyer', 'buyer_name'),
         grade: J.str(j['tea_grade']),
         rate: J.dbl(j['rate_per_kg']),
@@ -93,6 +97,18 @@ class SalesRepository {
       _api.page('/sales-register', SaleEntry.fromJson, query: q.toQuery(), page: page);
 
   Future<void> create(Map<String, Object?> body) => _api.post('/sales-register', cleanBody(body));
+
+  Future<void> update(int id, Map<String, Object?> body) async {
+    try {
+      await _api.put('/sales-register/$id', cleanBody(body));
+    } on ServerFailure catch (e) {
+      // More packages than the sale's split allows comes back as a 500:
+      // "Cannot update to 12 pkgs. Maximum allowed for this split is 10 pkgs (…)".
+      final max = RegExp(r'Maximum allowed for this split is (\d+)').firstMatch(e.serverMessage ?? '')?.group(1);
+      if (max != null) throw ValidationFailure('Too many packages.', {'pkgs': 'At most $max packages for this sale.'});
+      rethrow;
+    }
+  }
 }
 
 final salesRepositoryProvider = Provider((ref) => SalesRepository(ref.watch(apiProvider)));

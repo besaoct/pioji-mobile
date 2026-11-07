@@ -68,27 +68,31 @@ class SalesListScreen extends StatelessWidget {
 }
 
 class SalesFormScreen extends ConsumerStatefulWidget {
-  const SalesFormScreen({super.key});
+  const SalesFormScreen({super.key, this.editing});
+
+  /// The sale being edited, or null for a new one.
+  final SaleEntry? editing;
 
   @override
   ConsumerState<SalesFormScreen> createState() => _SalesFormScreenState();
 }
 
 class _SalesFormScreenState extends ConsumerState<SalesFormScreen> with FormSubmit {
-  MasterItem? _buyer;
-  String? _grade;
-  DateTime _deal = DateTime.now();
-  DateTime? _cnDate;
-  final _rate = TextEditingController();
-  final _mark = TextEditingController();
-  final _prefix = TextEditingController();
-  final _inv = TextEditingController();
-  final _pkgs = TextEditingController();
-  final _qty = TextEditingController();
-  final _cn = TextEditingController();
-  final _transport = TextEditingController();
-  final _discount = TextEditingController();
-  final _remarks = TextEditingController();
+  late final SaleEntry? _e = widget.editing;
+  late MasterItem? _buyer = _e?.buyerId == null ? null : MasterItem(_e!.buyerId!, _e.buyerName ?? '#${_e.buyerId}');
+  late String? _grade = _e?.grade;
+  late DateTime _deal = _e?.dealDate ?? DateTime.now();
+  late DateTime? _cnDate = _e?.cnDate;
+  late final _rate = TextEditingController(text: Fmt.editable(_e?.rate));
+  late final _mark = TextEditingController(text: _e?.mark);
+  late final _prefix = TextEditingController(text: _e?.invoicePrefix);
+  late final _inv = TextEditingController(text: _e?.invoiceNo);
+  late final _pkgs = TextEditingController(text: _e?.pkgs?.toString());
+  late final _qty = TextEditingController(text: Fmt.editable(_e?.quantity));
+  late final _cn = TextEditingController(text: _e?.cnNumber);
+  late final _transport = TextEditingController(text: _e?.transport);
+  late final _discount = TextEditingController(text: Fmt.editable(_e?.discount));
+  late final _remarks = TextEditingController(text: _e?.remarks);
 
   @override
   void dispose() {
@@ -101,7 +105,7 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> with FormSubm
   Future<void> _save() async {
     final ok = await submit<bool>(
       () async {
-        await ref.read(salesRepositoryProvider).create({
+        final body = {
           'buyer_id': _buyer?.id,
           'tea_grade': _grade,
           'rate_per_kg': Fmt.parse(_rate.text),
@@ -116,7 +120,13 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> with FormSubm
           'transport': _transport.text.trim(),
           'discount': Fmt.parse(_discount.text),
           'remarks': _remarks.text.trim(),
-        });
+        };
+        final repo = ref.read(salesRepositoryProvider);
+        if (_e == null) {
+          await repo.create(body);
+        } else {
+          await repo.update(_e.id, body);
+        }
         return true;
       },
       clientErrors: {
@@ -129,8 +139,12 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> with FormSubm
       ref.invalidate(salesListProvider);
       ref.invalidate(exFactoryListProvider);
       refreshSummaries(ref);
-      context.toast('Sale saved');
-      context.pop();
+      context.toast(_e == null ? 'Sale saved' : 'Sale updated');
+      if (_e == null) {
+        context.pop();
+      } else {
+        context.goNamed(Routes.sales);
+      }
     }
   }
 
@@ -141,8 +155,8 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> with FormSubm
     final amount = rate == null || qty == null ? null : rate * qty - (Fmt.parse(_discount.text) ?? 0);
     TextInputType dec() => const TextInputType.numberWithOptions(decimal: true);
     return FormScaffold(
-      title: 'New sale',
-      submitLabel: 'Save sale',
+      title: _e == null ? 'New sale' : 'Edit sale',
+      submitLabel: _e == null ? 'Save sale' : 'Save changes',
       submitting: submitting,
       onSubmit: _save,
       children: [
@@ -165,7 +179,7 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> with FormSubm
               Expanded(child: FieldInput(label: 'Invoice no', hint: '9812', controller: _inv, error: err('invoice_no'))),
             ]),
             Row(children: [
-              Expanded(child: FieldInput(label: 'Packages', hint: '25', controller: _pkgs, keyboardType: TextInputType.number, inputFormatters: digitsOnly)),
+              Expanded(child: FieldInput(label: 'Packages', hint: '25', controller: _pkgs, error: err('pkgs'), keyboardType: TextInputType.number, inputFormatters: digitsOnly)),
               Expanded(child: FieldInput(label: 'Quantity', hint: '875', suffix: 'kg', controller: _qty, onChanged: (_) => setState(() {}), keyboardType: dec(), inputFormatters: decimalOnly)),
             ]),
           ],
@@ -202,6 +216,9 @@ class SalesDetailScreen extends StatelessWidget {
     final c = context.colors;
     return DetailScaffold(
       title: s.mark ?? 'Sale',
+      actions: [
+        LinkButton(label: 'Edit', onPressed: () => context.pushNamed(Routes.salesEdit, pathParameters: {'id': '${s.id}'}, extra: s)),
+      ],
       children: [
         AppCard(
           padding: const EdgeInsets.all(16),

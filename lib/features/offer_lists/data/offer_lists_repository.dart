@@ -91,6 +91,8 @@ class OfferListsRepository {
       _api.page('/offer-lists', OfferList.fromJson, query: q.toQuery(), page: page);
 
   Future<void> create(Map<String, Object?> body) => _api.post('/offer-lists', cleanBody(body));
+
+  Future<void> update(int id, Map<String, Object?> body) => _api.put('/offer-lists/$id', cleanBody(body));
 }
 
 final offerListsRepositoryProvider = Provider((ref) => OfferListsRepository(ref.watch(apiProvider)));

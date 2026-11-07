@@ -37,6 +37,7 @@ class ExFactoryBill {
     this.mark,
     this.invoicePrefix,
     this.invoiceNo,
+    this.supplierId,
     this.supplierName,
     this.pkgs,
     this.nett,
@@ -47,6 +48,7 @@ class ExFactoryBill {
     this.sgst,
     this.total,
     this.cnNumber,
+    this.cnDate,
     this.transport,
     this.creditDays,
     this.status,
@@ -58,6 +60,7 @@ class ExFactoryBill {
   final String? mark;
   final String? invoicePrefix;
   final String? invoiceNo;
+  final int? supplierId;
   final String? supplierName;
   final int? pkgs;
   final double? nett;
@@ -68,6 +71,7 @@ class ExFactoryBill {
   final double? sgst;
   final double? total;
   final String? cnNumber;
+  final DateTime? cnDate;
   final String? transport;
   final int? creditDays;
   final RegisterStatus? status;
@@ -79,6 +83,7 @@ class ExFactoryBill {
         mark: J.str(j['mark']),
         invoicePrefix: J.str(j['invoice_prefix']),
         invoiceNo: J.str(j['invoice_no']),
+        supplierId: J.integer(j['supplier_id']),
         supplierName: J.nested(j, 'supplier_name', 'supplier', 'seller_name') ?? J.nested(j, 'seller_name', 'seller', 'seller_name'),
         pkgs: J.integer(j['pkgs']),
         nett: J.dbl(j['nett']),
@@ -89,6 +94,7 @@ class ExFactoryBill {
         sgst: J.dbl(j['sgst_amount']),
         total: J.dbl(j['total_bill_value']),
         cnNumber: J.str(j['cn_number']),
+        cnDate: J.date(j['cn_date']),
         transport: J.str(j['transport']),
         creditDays: J.integer(j['credit_days']),
         status: RegisterStatus.parse(j['register_status']),
@@ -123,6 +129,8 @@ class ExFactoryRepository {
   }
 
   /// Downloads the CSV with the current filters and returns the file path.
+  Future<void> update(int id, Map<String, Object?> body) => _api.put('/ex-factory/$id', cleanBody(body));
+
   Future<String> export(ListQuery q) async {
     final dir = await getTemporaryDirectory();
     final path = '${dir.path}/ex_factory_bills_${Fmt.api(DateTime.now())}.csv';

@@ -135,7 +135,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               routes: [
                 _top('new', Routes.offerNew, (_) => const OfferFormScreen()),
                 GoRoute(path: 'today', name: Routes.offeredToday, builder: (_, _) => const OfferedTodayScreen()),
-                GoRoute(path: ':id', name: Routes.offerDetail, builder: (_, s) => _detail<OfferList>(s, 'offer', (r, id) => r.read(offerListsRepositoryProvider).get(id), (x) => OfferDetailScreen(offer: x))),
+                GoRoute(path: ':id', name: Routes.offerDetail, builder: (_, s) => _detail<OfferList>(s, 'offer', (r, id) => r.read(offerListsRepositoryProvider).get(id), (x) => OfferDetailScreen(offer: x)), routes: [
+                  _top('edit', Routes.offerEdit, (s) => OfferFormScreen(editing: _extra<OfferList>(s))),
+                ]),
               ],
             ),
           ]),
@@ -175,11 +177,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ]),
                 GoRoute(path: 'sales', name: Routes.sales, builder: (_, _) => const SalesListScreen(), routes: [
                   _top('new', Routes.salesNew, (_) => const SalesFormScreen()),
-                  GoRoute(path: ':id', name: Routes.salesDetail, builder: (_, s) => _detail<SaleEntry>(s, 'sale', (r, id) => r.read(salesRepositoryProvider).get(id), (x) => SalesDetailScreen(entry: x))),
+                  GoRoute(path: ':id', name: Routes.salesDetail, builder: (_, s) => _detail<SaleEntry>(s, 'sale', (r, id) => r.read(salesRepositoryProvider).get(id), (x) => SalesDetailScreen(entry: x)), routes: [
+                    _top('edit', Routes.salesEdit, (s) => SalesFormScreen(editing: _extra<SaleEntry>(s))),
+                  ]),
                 ]),
                 GoRoute(path: 'ex-factory', name: Routes.exFactory, builder: (_, _) => const ExFactoryListScreen(), routes: [
                   _top('new', Routes.exFactoryNew, (_) => const ExFactoryFormScreen()),
-                  GoRoute(path: ':id', name: Routes.exFactoryDetail, builder: (_, s) => _detail<ExFactoryBill>(s, 'bill', (r, id) => r.read(exFactoryRepositoryProvider).get(id), (x) => ExFactoryDetailScreen(bill: x))),
+                  GoRoute(path: ':id', name: Routes.exFactoryDetail, builder: (_, s) => _detail<ExFactoryBill>(s, 'bill', (r, id) => r.read(exFactoryRepositoryProvider).get(id), (x) => ExFactoryDetailScreen(bill: x)), routes: [
+                    _top('edit', Routes.exFactoryEdit, (s) => ExFactoryFormScreen(editing: _extra<ExFactoryBill>(s))),
+                  ]),
                 ]),
                 GoRoute(path: 'settings', name: Routes.settings, builder: (_, _) => const SettingsScreen()),
               ],

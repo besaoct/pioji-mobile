@@ -53,8 +53,7 @@ AppFailure mapError(Object error) {
       }
       return ValidationFailure(msg, fields);
   }
-  if (status != null && status >= 500) return ServerFailure(status);
-  return ServerFailure(status);
+  return ServerFailure(status, serverMessage);
 }
 
 bool looksDuplicate(String text) {
