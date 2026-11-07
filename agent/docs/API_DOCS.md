@@ -7,7 +7,7 @@
 | **Format** | JSON (`multipart/form-data` only for photo uploads) |
 | **Last verified** | 2026-10-31 (signed in as admin; GETs and validation only) |
 
-> ⚠️ **Server bugs (updated 2026-11-05).** Admin login works. Sales register list, detail and edit, and sample detail return 500; some edits report success without saving. The current list is in `agent/STATUS.md` → API status.
+> ⚠️ **Server bugs (updated 2026-11-07).** Admin login works and 13 of the 22 issues from 5 Nov are fixed. The sales register list still returns 500, and offer edit doesn't save parties or the packing date. The current list is in `agent/STATUS.md` → API status.
 
 ---
 
@@ -69,7 +69,7 @@ List endpoints accept `per_page` (default `20`) and `page`. Items come back unde
 }
 ```
 
-The key differs per endpoint (see [Verified responses](#verified-responses-2026-10-31)). `GET /sellers` is the exception: it returns Laravel's paginator (`data.data`, `data.current_page`, …). The app's `Page.parse` handles both.
+The key differs per endpoint (see [Verified responses](#verified-responses-2026-10-31)). `GET /sellers` used Laravel's paginator (`data.data`) until 7 Nov 2026; it now returns `data.sellers` + `data.pagination` like the rest. The app's `Page.parse` handles both.
 
 ### Response envelope
 
@@ -200,7 +200,7 @@ Store `data.token` securely (`flutter_secure_storage`) and send it as `Authoriza
 | `price` | number | | |
 | `currency` | string | | `INR` |
 | `prompt_days` | int | | |
-| `party_1` … `party_5` | string | | party (buyer) names as text. The record has `party_6`–`party_10` too, but create drops them (tested 5 Nov 2026) |
+| `party_1` … `party_5` | string | | party (buyer) names as text. The record has `party_6`–`party_10` too, but create drops them, and edit doesn't save any party (tested 7 Nov 2026) |
 | `duplicate_action` | string | | `override` \| `reoffer` \| `reject` — what to do if the invoice already exists |
 
 ```json
@@ -670,7 +670,7 @@ Routes checked on 2026-10-29/30; responses checked signed in on 2026-10-31. ✅ 
 | 6.3 | PUT | `/bid-book/{id}` | ✅ | ✅ | not tested (would change data) |
 | 7.1 | GET | `/contracts` | ✅ | ✅ | ✅ |
 | 7.2 | POST | `/contracts` | ✅ | ✅ | 422 only |
-| 8.1 | GET | `/sales-register` | ✅ | ✅ | ❌ 500 (server bug) |
+| 8.1 | GET | `/sales-register` | ✅ | ✅ | ❌ 500 "Recursion detected" (server bug, 7 Nov 2026) |
 | 8.2 | POST | `/sales-register` | ✅ | ✅ | 422 only |
 | 9.1 | GET | `/ex-factory` | ✅ | ✅ | ✅ |
 | 9.2 | GET | `/ex-factory/export` | ✅ | ✅ | ✅ |
@@ -694,7 +694,7 @@ Signed in as admin. Only GET requests, plus create requests with an empty body (
 | `GET /sales-register` | ❌ **500** | — | See server bugs |
 | `GET /gardens` | ✅ 200 | `gardens` (2,183 total) | `garden_name`, `city`, aliases. Use `search` + paging, never load all |
 | `GET /buyers` | ✅ 200 | `buyers` | `buyer_name`, `buyer_type`, `contact_person`, `email`, `phone` |
-| `GET /sellers` | ✅ 200 | Laravel paginator: `data.data` | `seller_name`, `tea_estate_name`, `city` |
+| `GET /sellers` | ✅ 200 | `sellers` (Laravel paginator `data.data` until 7 Nov 2026) | `seller_name`, `tea_estate_name`, `city` |
 | `GET /grades` | ✅ 200 | `grades` (219 total) | `grade_code`, `grade_name`, `category` |
 | `GET /posting-lists` | ✅ 200 | `posting_lists` (+ `statuses`) | `name`, `list_number`, `list_date`, `status`, `items_count` |
 | `GET /negotiators` | ✅ 200 | `data` is a plain list | `id`, `name`, `email`, `role`, `department` |
@@ -754,17 +754,28 @@ Every create, edit and delete was run against the server with clearly marked tes
 | CSV export | ✅ includes new bills | — | — | |
 | Logout | ✅ token revoked (next call 401) | — | — | |
 
-**Dates** are sent in UTC, e.g. `2026-10-29T18:30:00.000000Z` means 30 Oct 2026 in India. Convert to local time before showing a date (the app does).
+**Dates** were sent in UTC, e.g. `2026-10-29T18:30:00.000000Z` means 30 Oct 2026 in India. Since 7 Nov 2026 date-only fields come back as plain `YYYY-MM-DD` (offer `d_o_packing` is still a timestamp). The app reads both.
+
+### Re-test (2026-11-07)
+
+Same method: TEST records dated 31 Dec 2026, all deleted afterwards (sample count back to 28).
+
+| Area | Result |
+|---|---|
+| Sales register | Detail ✅ and edit ✅ now work. List still ❌ 500 "Recursion detected". Edit with more packages than the split allows → 500 "Cannot update to 12 pkgs. Maximum allowed for this split is 10 pkgs…" (should be 422) |
+| Samples | Detail ✅, missing id → 404 ✅. Edit saves every field ✅. Delete with buyers allocated → 422 ✅. `arrival_date` and `search` filters work ✅ |
+| Offer lists | Edit saves date, garden, grade, prefix, invoice, weights, price and prompt days ✅, but not parties or `d_o_packing` ❌. Duplicate invoice → **409** with `is_duplicate`, `existing_id`, `existing_offer` ✅. Parties 6–10 still dropped on create ❌ |
+| Batches | `batch_date` kept when `sample_ids` are sent ✅ |
+| Courier | `posting_list_ids` linked (`posting_lists[]` in the detail) ✅ |
+| Contracts | Item without a price → 422 with `contract_items.0.price_per_kg` ✅ |
+| Ex-factory | Edit saves `credit_days` ✅. Switching GST type on edit keeps the old amounts unless the unused type is sent as 0 (the app does). `igst_amount: null` → 500 ❌. A bill matching a sale is still `qty_mismatch` ❌ |
+| Bid book | Deleted lot → 200 with the record and `deleted_at` ❌ (should be 404) |
+| Errors | Unknown paths → JSON 404 ✅. `APP_DEBUG` still on: 405s include `exception` and `file`, 500s include SQL ❌ |
+| Missing | `POST /buyers`, `POST /sellers` → 405; `GET /dashboard/summary` → 404 |
 
 ### Still missing
 
-Edit and delete now exist for every module, and unknown `/api/v1/*` paths return a JSON 404. The remaining gaps and bugs are listed in `agent/STATUS.md` → API status.
-
----|---|---|
-| PUT | `/{id}` on offer lists, batches, courier, contracts, sales, ex-factory | 405 |
-| DELETE | `/{id}` on every module except samples | 405 |
-| GET | `/dashboard/summary` (optional) | HTML 404 page, status 200 |
-| — | Unknown `/api/v1/*` paths | HTML 404 page with status 200 instead of JSON 404 |
+The remaining gaps and bugs are listed in `agent/STATUS.md` → API status.
 
 ---
 

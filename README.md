@@ -58,18 +58,17 @@ Start with [agent/README.md](agent/README.md). It links to:
 
 ## API status
 
-Sign-in and every module's list, create and delete work against the staging API. Some endpoints still need server fixes:
+Sign-in and every module's list, detail, create, edit and delete work against the staging API (re-checked 7 Nov 2026), except:
 
 | Needs fixing | Effect in the app |
 |---|---|
-| Sales register list, detail and edit return 500 | Sales register list doesn't load; no sale edit |
-| Sample detail returns 500 | Sample detail shows the list's copy |
-| Sample, offer and ex-factory edits report success but don't save | Sample edit saves only remarks and arrival date; no edit screen for offers and ex-factory |
-| Samples ignore the arrival date and search filters | Home shows total samples, not today's |
+| Sales register list returns 500 | Sales register list doesn't load (detail, create, edit and delete work) |
+| Offer edit doesn't save parties or packing date | Shown read-only on the edit screen |
 | Offers save only parties 1–5 | Add party is capped at 5 |
-| Some validation errors return 500 instead of 422, with stack traces | Generic error message |
+| Some errors return 500 instead of 422, with SQL in the message | Generic error message |
+| No create buyer / seller API | Buyers and sellers can only be picked |
 
-The full list of 22 items, what works, and which fixes need an app update: [agent/STATUS.md → API status](agent/STATUS.md#api-status).
+The full list, what works, and which fixes need an app update: [agent/STATUS.md → API status](agent/STATUS.md#api-status).
 
 ## Releasing (Android)
 
