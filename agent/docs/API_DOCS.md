@@ -7,7 +7,7 @@
 | **Format** | JSON (`multipart/form-data` only for photo uploads) |
 | **Last verified** | 2026-10-31 (signed in as admin; GETs and validation only) |
 
-> ⚠️ **Server bugs (updated 2026-11-09).** 19 of the 22 issues from 5 Nov are fixed. Offer edit doesn't save the packing date, a sale edit with too many packages returns 500, and `GET /dashboard/summary` returns 500. The current list is in `agent/STATUS.md` → API status.
+> ✅ **Server bugs (updated 2026-11-09).** All 22 issues from 5 Nov are fixed. See the re-tests below and `agent/STATUS.md` → API status.
 
 ---
 
@@ -195,7 +195,7 @@ Store `data.token` securely (`flutter_secure_storage`) and send it as `Authoriza
 | `nett` | number | | kg per package |
 | `ttl_kgs` | number | | **2-of-3 rule:** send any two of `pkgs`/`nett`/`ttl_kgs`, the third is computed |
 | `gross_weight` | number | | |
-| `d_o_packing` | date | | date of packing |
+| `d_o_packing` | date | | date of packing. Saves on create and edit (9 Nov 2026); comes back as a timestamp |
 | `type` | string | | `Tea` |
 | `price` | number | | |
 | `currency` | string | | `INR` |
@@ -542,7 +542,7 @@ Same fields as create. Send the fields you want to change.
 | `buyer_id` | int | |
 | `tea_grade` | string | |
 | `start_date` / `end_date` | date | deal / entry date |
-| `status` | string | `pending` \| `confirmed` \| `dispatched` \| `delivered` |
+| `status` | string | `pending` \| `approved` \| `rejected` (live data, 9 Nov 2026; `confirmed`, `dispatched` and `delivered` are never used) |
 | `per_page` / `page` | int | |
 
 ### 8.2 `POST /sales-register` — create
@@ -785,6 +785,17 @@ Same method: TEST records dated 31 Dec 2026, all deleted afterwards (sample coun
 | Buyers | `POST /buyers` with `buyer_name` → 201, `data` is the buyer (`id`, generated `code` and placeholder email) ✅. Duplicate names are accepted. `DELETE /buyers/{id}` ✅ |
 | Sellers | `POST /sellers` exists (422 needs `seller_name`); not created because `DELETE /sellers/{id}` → 405 |
 | Dashboard | `GET /dashboard/summary` exists but → 500 `Class "App\Models\Batch" not found` ❌ |
+
+### Re-test (2026-11-09, later)
+
+| Area | Result |
+|---|---|
+| Offer lists | Edit saves `d_o_packing` ✅ (returned as a timestamp, e.g. `2026-12-22T06:28:24.000000Z`) |
+| Sales register | Too many packages on edit → **422** `Validation error`, `errors.pkgs: ["Cannot update to 12 pkgs. Maximum allowed for this split is 10 pkgs (Total: 10, Allocated to other splits: 0)."]` ✅ |
+| Dashboard | `GET /dashboard/summary` → 200 ✅. `data` has `samples {total, today, pending, approved}`, `sales_register {total, today, approved, pending, total_amount, total_kg}`, `offer_lists {total, available, today}`, `bid_book {total, open, parked, held}`, `ex_factory {total, matched, mismatched, unregistered, total_value}`, `buyers {total, active}`, `sellers {total, active}`, `contracts {total, active}`, `batches {total}` |
+| Dashboard numbers | Checked against the lists: samples, open bids, offers, batches match; ex-factory `mismatched` and `unregistered` match the list's `register_status` counts (TEST bills). `sales_register.total` counts **records**, so a sale split between two buyers counts twice (8 vs 7 in the list). `total_amount`, `total_kg` and `pending` match the list and cover all time |
+| Split sales | The list returns one row per sale with `split_count`, `all_split_ids`, `aggregated_pkgs`, `aggregated_quantity_kg`, `aggregated_total_amount`. `GET /sales-register/{id}` has none of these (`is_split` false, `split_count` null) and returns only that split's own figures |
+| Sellers | `POST /sellers {seller_name}` → 201, `data` is the seller with an `id` ✅. `DELETE /sellers/{id}` → 200, and 404 "Seller not found." for a missing id ✅ |
 
 ### Still missing
 

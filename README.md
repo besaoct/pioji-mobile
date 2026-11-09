@@ -58,13 +58,7 @@ Start with [agent/README.md](agent/README.md). It links to:
 
 ## API status
 
-Sign-in and every module's list, detail, create, edit and delete work against the staging API (re-checked 9 Nov 2026), except:
-
-| Needs fixing | Effect in the app |
-|---|---|
-| Offer edit doesn't save the date of packing | Shown read-only on the edit screen |
-| A sale edit with too many packages returns 500 instead of 422 | The app shows it on the Packages field anyway |
-| `GET /dashboard/summary` returns 500 | Not used yet; Home counts come from the lists |
+Sign-in and every module's list, detail, create, edit and delete work against the staging API. All known server bugs were fixed by 9 Nov 2026.
 
 The full list and what works: [agent/STATUS.md → API status](agent/STATUS.md#api-status).
 

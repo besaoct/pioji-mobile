@@ -48,7 +48,7 @@ class SalesListScreen extends StatelessWidget {
       ],
       itemBuilder: (context, s) => AppListRow(
         title: [s.mark ?? 'Mark –', ?s.grade].join(' · '),
-        subtitle: [s.buyerName, Fmt.invoice(s.invoicePrefix, s.invoiceNo), '${Fmt.kg(s.quantity)} × ${Fmt.money(s.rate)}']
+        subtitle: [s.buyerName, Fmt.invoice(s.invoicePrefix, s.invoiceNo), '${Fmt.kg(s.allQuantity)} × ${Fmt.money(s.rate)}', if (s.isSplit) 'Split ${s.splitCount} ways']
             .whereType<String>()
             .where((e) => e.isNotEmpty)
             .join(' · '),
@@ -57,7 +57,7 @@ class SalesListScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(Fmt.money(s.amount), style: AppText.callout.copyWith(fontWeight: FontWeight.w600)),
+            Text(Fmt.money(s.allAmount), style: AppText.callout.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
             StatusBadge(s.status.label, tone: s.status.tone),
           ],
@@ -225,8 +225,8 @@ class SalesDetailScreen extends StatelessWidget {
           child: Row(children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(Fmt.money(s.amount), style: AppText.metric),
-                Text('${Fmt.kg(s.quantity)} × ${Fmt.money(s.rate)}', style: AppText.footnote.copyWith(color: c.textTertiary)),
+                Text(Fmt.money(s.allAmount), style: AppText.metric),
+                Text('${Fmt.kg(s.allQuantity)} × ${Fmt.money(s.rate)}', style: AppText.footnote.copyWith(color: c.textTertiary)),
               ]),
             ),
             StatusBadge(s.status.label, tone: s.status.tone),
@@ -237,7 +237,8 @@ class SalesDetailScreen extends StatelessWidget {
             InfoRow('Buyer', s.buyerName),
             InfoRow('Grade', s.grade),
             InfoRow('Invoice', Fmt.invoice(s.invoicePrefix, s.invoiceNo)),
-            InfoRow('Packages', s.pkgs?.toString()),
+            InfoRow('Packages', s.allPkgs?.toString()),
+            if (s.isSplit) InfoRow('Split', '${s.splitCount} ways · this entry ${Fmt.kg(s.quantity)}, ${s.pkgs ?? 0} pkgs'),
             InfoRow('Deal date', Fmt.day(s.dealDate)),
             InfoRow('CN', [s.cnNumber, if (s.cnDate != null) Fmt.day(s.cnDate)].whereType<String>().join(' · ')),
             InfoRow('Transport', s.transport),

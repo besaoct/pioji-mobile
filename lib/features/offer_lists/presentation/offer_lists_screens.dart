@@ -116,8 +116,7 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
         'nett': Fmt.parse(_nett.text),
         'ttl_kgs': Fmt.parse(_total.text),
         'gross_weight': Fmt.parse(_gross.text),
-        // The packing date doesn't save on edit, so it's only sent on create.
-        if (_e == null) 'd_o_packing': _packing == null ? null : Fmt.api(_packing!),
+        'd_o_packing': _packing == null ? null : Fmt.api(_packing!),
         'type': 'Tea',
         'price': Fmt.parse(_price.text),
         'currency': 'INR',
@@ -190,13 +189,9 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
         ),
         WeightFields(pkgs: _pkgs, nett: _nett, total: _total, errors: errors),
         GroupedSection(
-          footer: _e == null ? null : const Text("The date of packing can't be changed after the offer is saved."),
           children: [
             FieldInput(label: 'Gross weight', hint: '720', controller: _gross, suffix: 'kg', keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: decimalOnly),
-            if (_e == null)
-              DateRow(label: 'Date of packing', value: _packing, onChanged: (d) => setState(() => _packing = d))
-            else
-              InfoRow('Date of packing', Fmt.day(_e.packingDate)),
+            DateRow(label: 'Date of packing', value: _packing, onChanged: (d) => setState(() => _packing = d)),
           ],
         ),
         GroupedSection(

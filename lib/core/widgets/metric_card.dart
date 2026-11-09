@@ -6,7 +6,7 @@ import 'app_card.dart';
 import 'one_line_text.dart';
 
 class MetricCard extends StatelessWidget {
-  const MetricCard({super.key, required this.label, required this.value, this.onTap, this.valueColor, this.loading = false});
+  const MetricCard({super.key, required this.label, required this.value, this.onTap, this.valueColor, this.loading = false, this.hint});
 
   final String label;
   final String value;
@@ -14,12 +14,15 @@ class MetricCard extends StatelessWidget {
   final Color? valueColor;
   final bool loading;
 
+  /// Small text after the value, e.g. "28 in all".
+  final String? hint;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     return Semantics(
       button: onTap != null,
-      label: '$label: $value',
+      label: hint == null ? '$label: $value' : '$label: $value, $hint',
       excludeSemantics: true,
       child: AppCard(
         onTap: onTap,
@@ -40,7 +43,17 @@ class MetricCard extends StatelessWidget {
                         decoration: BoxDecoration(color: c.fill, borderRadius: BorderRadius.circular(6)),
                       ),
                     )
-                  : FitText(value, style: AppText.metric.copyWith(color: valueColor ?? c.textPrimary)),
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Flexible(child: FitText(value, style: AppText.metric.copyWith(color: valueColor ?? c.textPrimary))),
+                        if (hint != null) ...[
+                          const SizedBox(width: 6),
+                          Flexible(child: OneLineText(hint!, style: AppText.footnote.copyWith(color: c.textTertiary))),
+                        ],
+                      ],
+                    ),
             ),
           ],
         ),

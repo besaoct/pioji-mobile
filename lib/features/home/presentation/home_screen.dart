@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/design/context_ext.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/design/typography.dart';
+import '../../../core/list/list_query.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/app_card.dart';
@@ -12,7 +13,7 @@ import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/metric_card.dart';
 import '../../../core/widgets/one_line_text.dart';
 import '../../../core/widgets/scaffolds.dart';
-import '../../ex_factory/data/ex_factory_repository.dart';
+import '../../sales_register/data/sales_repository.dart';
 import '../../samples/presentation/samples_list_screen.dart';
 import '../application/home_providers.dart';
 
@@ -23,15 +24,16 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
     String count(AsyncValue<int> v) => v.when(data: Fmt.number, loading: () => '–', error: (_, _) => '–');
-    final samples = ref.watch(samplesTodayCountProvider);
+    final dash = ref.watch(dashboardProvider);
+    final d = dash.value;
+    String dashCount(int? Function(DashboardSummary d) pick) => dash.hasValue ? Fmt.number(pick(dash.value!)) : '–';
     final unbatched = ref.watch(unbatchedTodayProvider);
-    final open = ref.watch(openBidsCountProvider);
     final awaiting = ref.watch(awaitingBidsCountProvider);
-    final ex = ref.watch(exMetricsHomeProvider);
     final unallocated = ref.watch(unallocatedTodayProvider);
     final recent = ref.watch(recentSamplesProvider);
-    final mismatches = ex.whenData((m) => (m[RegisterStatus.priceMismatch] ?? 0) + (m[RegisterStatus.qtyMismatch] ?? 0));
-    final unregistered = ex.value?[RegisterStatus.unregistered] ?? 0;
+    final mismatches = d?.exMismatched ?? 0;
+    final unregistered = d?.exUnregistered ?? 0;
+    final pendingSales = d?.salesPending ?? 0;
 
     final checklist = <Widget>[
       if ((unbatched.value ?? 0) > 0)
@@ -55,6 +57,16 @@ class HomeScreen extends ConsumerWidget {
           action: 'Review',
           onTap: () => context.goNamed(Routes.bids),
         ),
+      if (pendingSales > 0)
+        _CheckRow(
+          icon: CupertinoIcons.checkmark_rectangle,
+          text: '$pendingSales ${pendingSales == 1 ? 'sale is' : 'sales are'} waiting for approval',
+          action: 'Review',
+          onTap: () {
+            ref.read(salesQueryProvider.notifier).replace(const ListQuery(params: {'status': 'pending'}));
+            context.pushNamed(Routes.sales);
+          },
+        ),
       if (unregistered > 0)
         _CheckRow(
           icon: CupertinoIcons.doc_chart,
@@ -63,14 +75,14 @@ class HomeScreen extends ConsumerWidget {
           onTap: () => context.pushNamed(Routes.exFactory),
         ),
     ];
-    final checklistLoading = unbatched.isLoading || unallocated.isLoading || awaiting.isLoading || ex.isLoading;
+    final checklistLoading = unbatched.isLoading || unallocated.isLoading || awaiting.isLoading || dash.isLoading;
 
     return LargeTitleScaffold(
       title: 'Today',
       caption: Fmt.longDay(DateTime.now()),
       onRefresh: () async {
         refreshHome(ref);
-        await ref.read(samplesTodayCountProvider.future).catchError((_) => 0);
+        await ref.read(dashboardProvider.future).catchError((_) => const DashboardSummary());
       },
       slivers: [
         SliverList.list(
@@ -86,18 +98,26 @@ class HomeScreen extends ConsumerWidget {
                 mainAxisExtent: 84,
               ),
               children: [
-                MetricCard(label: 'Samples', value: count(samples), loading: samples.isLoading, onTap: () => context.goNamed(Routes.samples)),
+                MetricCard(
+                  label: 'Samples today',
+                  value: dashCount((d) => d.samplesToday),
+                  hint: d?.samplesTotal == null ? null : '${Fmt.number(d!.samplesTotal)} in all',
+                  loading: dash.isLoading,
+                  onTap: () => context.goNamed(Routes.samples),
+                ),
                 MetricCard(label: 'Unbatched', value: count(unbatched), loading: unbatched.isLoading, onTap: () => context.pushNamed(Routes.batchAuto)),
-                MetricCard(label: 'Open bids', value: count(open), loading: open.isLoading, onTap: () => context.goNamed(Routes.bids)),
+                MetricCard(label: 'Open bids', value: dashCount((d) => d.openBids), loading: dash.isLoading, onTap: () => context.goNamed(Routes.bids)),
                 MetricCard(
                   label: 'Ex-factory mismatches',
-                  value: count(mismatches),
-                  loading: ex.isLoading,
-                  valueColor: (mismatches.value ?? 0) > 0 ? c.warning : null,
+                  value: dashCount((d) => d.exMismatched),
+                  loading: dash.isLoading,
+                  valueColor: mismatches > 0 ? c.warning : null,
                   onTap: () => context.pushNamed(Routes.exFactory),
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            _SalesCard(dash: dash),
             const SizedBox(height: AppSpace.xl),
             _Label('Quick actions'),
             Row(
@@ -139,6 +159,50 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Sales value, kg and pending approvals, across all time.
+class _SalesCard extends StatelessWidget {
+  const _SalesCard({required this.dash});
+  final AsyncValue<DashboardSummary> dash;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final d = dash.value;
+    final pending = d?.salesPending;
+    return AppCard(
+      onTap: () => context.pushNamed(Routes.sales),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(child: Text('Sales', style: AppText.footnote.copyWith(color: c.textTertiary))),
+            Text('All time', style: AppText.footnote.copyWith(color: c.textTertiary)),
+          ]),
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 30,
+            child: dash.isLoading && d == null
+                ? Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(width: 120, height: 20, decoration: BoxDecoration(color: c.fill, borderRadius: BorderRadius.circular(6))),
+                  )
+                : FitText(d == null ? '–' : Fmt.money(d.salesAmount), style: AppText.metric),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            [
+              Fmt.kg(d?.salesKg),
+              if (pending != null) pending == 0 ? 'nothing pending' : '${Fmt.number(pending)} pending approval',
+            ].join(' · '),
+            style: AppText.footnote.copyWith(color: pending != null && pending > 0 ? c.warning : c.textSecondary),
+          ),
+        ],
+      ),
     );
   }
 }

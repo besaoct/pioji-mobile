@@ -177,7 +177,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ]),
                 GoRoute(path: 'sales', name: Routes.sales, builder: (_, _) => const SalesListScreen(), routes: [
                   _top('new', Routes.salesNew, (_) => const SalesFormScreen()),
-                  GoRoute(path: ':id', name: Routes.salesDetail, builder: (_, s) => _detail<SaleEntry>(s, 'sale', (r, id) => r.read(salesRepositoryProvider).get(id), (x) => SalesDetailScreen(entry: x)), routes: [
+                  GoRoute(path: ':id', name: Routes.salesDetail, builder: (_, s) => _detail<SaleEntry>(s, 'sale', (r, id) async => (await r.read(salesRepositoryProvider).get(id)).withSplitFrom(_extra<SaleEntry>(s)), (x) => SalesDetailScreen(entry: x)), routes: [
                     _top('edit', Routes.salesEdit, (s) => SalesFormScreen(editing: _extra<SaleEntry>(s))),
                   ]),
                 ]),

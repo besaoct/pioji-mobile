@@ -11,9 +11,8 @@ import '../../../core/widgets/status_badge.dart';
 
 enum SaleStatus {
   pending('pending', 'Pending', Tone.warning),
-  confirmed('confirmed', 'Confirmed', Tone.accent),
-  dispatched('dispatched', 'Dispatched', Tone.accent),
-  delivered('delivered', 'Delivered', Tone.success);
+  approved('approved', 'Approved', Tone.success),
+  rejected('rejected', 'Rejected', Tone.danger);
 
   const SaleStatus(this.api, this.label, this.tone);
   final String api;
@@ -42,6 +41,10 @@ class SaleEntry {
     this.discount,
     this.remarks,
     this.status = SaleStatus.pending,
+    this.splitCount = 1,
+    this.totalPkgs,
+    this.totalQuantity,
+    this.totalAmount,
   });
 
   final int id;
@@ -62,7 +65,49 @@ class SaleEntry {
   final String? remarks;
   final SaleStatus status;
 
+  /// A sale split between buyers is stored as one record per split; the list
+  /// shows it once, with the totals of all splits.
+  final int splitCount;
+  final int? totalPkgs;
+  final double? totalQuantity;
+  final double? totalAmount;
+
+  bool get isSplit => splitCount > 1;
+
   double? get amount => rate == null || quantity == null ? null : rate! * quantity! - (discount ?? 0);
+
+  /// Packages, kg and value across all splits.
+  int? get allPkgs => isSplit ? totalPkgs ?? pkgs : pkgs;
+  double? get allQuantity => isSplit ? totalQuantity ?? quantity : quantity;
+  double? get allAmount => isSplit ? totalAmount ?? amount : amount;
+
+  /// `GET /sales-register/{id}` has no split fields, so a refreshed detail
+  /// keeps the totals from the list copy.
+  SaleEntry withSplitFrom(SaleEntry? listCopy) => isSplit || listCopy == null || !listCopy.isSplit
+      ? this
+      : SaleEntry(
+          id: id,
+          buyerId: buyerId,
+          buyerName: buyerName,
+          grade: grade,
+          rate: rate,
+          pkgs: pkgs,
+          quantity: quantity,
+          mark: mark,
+          invoicePrefix: invoicePrefix,
+          invoiceNo: invoiceNo,
+          dealDate: dealDate,
+          cnNumber: cnNumber,
+          cnDate: cnDate,
+          transport: transport,
+          discount: discount,
+          remarks: remarks,
+          status: status,
+          splitCount: listCopy.splitCount,
+          totalPkgs: listCopy.totalPkgs,
+          totalQuantity: listCopy.totalQuantity,
+          totalAmount: listCopy.totalAmount,
+        );
 
   factory SaleEntry.fromJson(Map<String, dynamic> j) => SaleEntry(
         id: J.intOr(j['id'], 0),
@@ -82,6 +127,10 @@ class SaleEntry {
         discount: J.dbl(j['discount']),
         remarks: J.str(j['remarks']),
         status: SaleStatus.parse(j['status']),
+        splitCount: J.intOr(j['split_count'], 1),
+        totalPkgs: J.integer(j['aggregated_pkgs']),
+        totalQuantity: J.dbl(j['aggregated_quantity_kg']),
+        totalAmount: J.dbl(j['aggregated_total_amount']),
       );
 }
 
@@ -101,12 +150,11 @@ class SalesRepository {
   Future<void> update(int id, Map<String, Object?> body) async {
     try {
       await _api.put('/sales-register/$id', cleanBody(body));
-    } on ServerFailure catch (e) {
-      // More packages than the sale's split allows comes back as a 500:
-      // "Cannot update to 12 pkgs. Maximum allowed for this split is 10 pkgs (…)".
-      final max = RegExp(r'Maximum allowed for this split is (\d+)').firstMatch(e.serverMessage ?? '')?.group(1);
-      if (max != null) throw ValidationFailure('Too many packages.', {'pkgs': 'At most $max packages for this sale.'});
-      rethrow;
+    } on ValidationFailure catch (e) {
+      // Shorten "Cannot update to 12 pkgs. Maximum allowed for this split is 10 pkgs (…)".
+      final max = RegExp(r'Maximum allowed for this split is (\d+)').firstMatch(e.fieldErrors['pkgs'] ?? '')?.group(1);
+      if (max == null) rethrow;
+      throw ValidationFailure(e.serverMessage, {...e.fieldErrors, 'pkgs': 'At most $max packages for this sale.'});
     }
   }
 }
