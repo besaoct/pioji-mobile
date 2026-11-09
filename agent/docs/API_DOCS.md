@@ -7,7 +7,7 @@
 | **Format** | JSON (`multipart/form-data` only for photo uploads) |
 | **Last verified** | 2026-10-31 (signed in as admin; GETs and validation only) |
 
-> ⚠️ **Server bugs (updated 2026-11-07).** Admin login works and 13 of the 22 issues from 5 Nov are fixed. The sales register list still returns 500, and offer edit doesn't save parties or the packing date. The current list is in `agent/STATUS.md` → API status.
+> ⚠️ **Server bugs (updated 2026-11-09).** 19 of the 22 issues from 5 Nov are fixed. Offer edit doesn't save the packing date, a sale edit with too many packages returns 500, and `GET /dashboard/summary` returns 500. The current list is in `agent/STATUS.md` → API status.
 
 ---
 
@@ -200,7 +200,7 @@ Store `data.token` securely (`flutter_secure_storage`) and send it as `Authoriza
 | `price` | number | | |
 | `currency` | string | | `INR` |
 | `prompt_days` | int | | |
-| `party_1` … `party_5` | string | | party (buyer) names as text. The record has `party_6`–`party_10` too, but create drops them, and edit doesn't save any party (tested 7 Nov 2026) |
+| `party_1` … `party_10` | string | | party (buyer) names as text. All 10 save on create and edit (9 Nov 2026). On edit, `null` clears a party and a missing key keeps it |
 | `duplicate_action` | string | | `override` \| `reoffer` \| `reject` — what to do if the invoice already exists |
 
 ```json
@@ -670,7 +670,7 @@ Routes checked on 2026-10-29/30; responses checked signed in on 2026-10-31. ✅ 
 | 6.3 | PUT | `/bid-book/{id}` | ✅ | ✅ | not tested (would change data) |
 | 7.1 | GET | `/contracts` | ✅ | ✅ | ✅ |
 | 7.2 | POST | `/contracts` | ✅ | ✅ | 422 only |
-| 8.1 | GET | `/sales-register` | ✅ | ✅ | ❌ 500 "Recursion detected" (server bug, 7 Nov 2026) |
+| 8.1 | GET | `/sales-register` | ✅ | ✅ | ✅ items in `sales_entries` (fixed 9 Nov 2026) |
 | 8.2 | POST | `/sales-register` | ✅ | ✅ | 422 only |
 | 9.1 | GET | `/ex-factory` | ✅ | ✅ | ✅ |
 | 9.2 | GET | `/ex-factory/export` | ✅ | ✅ | ✅ |
@@ -772,6 +772,19 @@ Same method: TEST records dated 31 Dec 2026, all deleted afterwards (sample coun
 | Bid book | Deleted lot → 200 with the record and `deleted_at` ❌ (should be 404) |
 | Errors | Unknown paths → JSON 404 ✅. `APP_DEBUG` still on: 405s include `exception` and `file`, 500s include SQL ❌ |
 | Missing | `POST /buyers`, `POST /sellers` → 405; `GET /dashboard/summary` → 404 |
+
+### Re-test (2026-11-09)
+
+| Area | Result |
+|---|---|
+| Sales register | List ✅ (`data.sales_entries` + `data.pagination`; items have a `buyer` object and split fields). Too many packages on edit is still 500 ❌ |
+| Offer lists | `party_6`–`party_10` save on create ✅. Edit saves parties ✅ (`null` clears, missing key keeps) but still not `d_o_packing` ❌ |
+| Ex-factory | `igst_amount: null` → saved as 0 ✅. A bill matching a sale → `matched` ✅ |
+| Bid book | Deleted lot → 404 ✅ |
+| Errors | 405 → `{"success": false, "message": "Method not allowed for this route."}` ✅. No SQL error came up to check 500s |
+| Buyers | `POST /buyers` with `buyer_name` → 201, `data` is the buyer (`id`, generated `code` and placeholder email) ✅. Duplicate names are accepted. `DELETE /buyers/{id}` ✅ |
+| Sellers | `POST /sellers` exists (422 needs `seller_name`); not created because `DELETE /sellers/{id}` → 405 |
+| Dashboard | `GET /dashboard/summary` exists but → 500 `Class "App\Models\Batch" not found` ❌ |
 
 ### Still missing
 

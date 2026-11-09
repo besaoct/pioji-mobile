@@ -58,17 +58,15 @@ Start with [agent/README.md](agent/README.md). It links to:
 
 ## API status
 
-Sign-in and every module's list, detail, create, edit and delete work against the staging API (re-checked 7 Nov 2026), except:
+Sign-in and every module's list, detail, create, edit and delete work against the staging API (re-checked 9 Nov 2026), except:
 
 | Needs fixing | Effect in the app |
 |---|---|
-| Sales register list returns 500 | Sales register list doesn't load (detail, create, edit and delete work) |
-| Offer edit doesn't save parties or packing date | Shown read-only on the edit screen |
-| Offers save only parties 1–5 | Add party is capped at 5 |
-| Some errors return 500 instead of 422, with SQL in the message | Generic error message |
-| No create buyer / seller API | Buyers and sellers can only be picked |
+| Offer edit doesn't save the date of packing | Shown read-only on the edit screen |
+| A sale edit with too many packages returns 500 instead of 422 | The app shows it on the Packages field anyway |
+| `GET /dashboard/summary` returns 500 | Not used yet; Home counts come from the lists |
 
-The full list, what works, and which fixes need an app update: [agent/STATUS.md → API status](agent/STATUS.md#api-status).
+The full list and what works: [agent/STATUS.md → API status](agent/STATUS.md#api-status).
 
 ## Releasing (Android)
 
