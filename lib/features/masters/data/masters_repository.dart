@@ -96,6 +96,14 @@ class MastersRepository {
     }
   }
 
+  /// Quick-register a buyer or seller by name (`POST /buyers`, `POST /sellers`).
+  /// The server fills the rest (code, type, placeholder email).
+  Future<MasterItem> create(String path, String nameKey, String name) async {
+    final data = J.map(await _api.post(path, {nameKey: name})) ?? const {};
+    final record = data.containsKey('id') ? data : data.values.whereType<Map<String, dynamic>>().firstWhere((v) => v.containsKey('id'), orElse: () => const {});
+    return MasterItem.fromJson(record) ?? (throw StateError('The server did not return the new record.'));
+  }
+
   Future<List<MasterItem>> buyers() async {
     final direct = await list('/buyers');
     if (direct.isNotEmpty) return direct;

@@ -93,9 +93,9 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
   late final _gross = TextEditingController(text: Fmt.editable(_e?.grossWeight));
   late final _price = TextEditingController(text: Fmt.editable(_e?.price));
   late final _prompt = TextEditingController(text: _e?.promptDays?.toString());
-  /// The offer API saves party_1 … party_5 (6–10 are dropped on create).
-  static const _maxParties = 5;
-  final _parties = <String?>[null];
+  /// The offer API has party_1 … party_10.
+  static const _maxParties = 10;
+  late final _parties = <String?>[...?_e?.parties, if (_e == null || _e.parties.isEmpty) null];
 
   @override
   void dispose() {
@@ -116,16 +116,14 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
         'nett': Fmt.parse(_nett.text),
         'ttl_kgs': Fmt.parse(_total.text),
         'gross_weight': Fmt.parse(_gross.text),
+        // The packing date doesn't save on edit, so it's only sent on create.
         if (_e == null) 'd_o_packing': _packing == null ? null : Fmt.api(_packing!),
         'type': 'Tea',
         'price': Fmt.parse(_price.text),
         'currency': 'INR',
         'prompt_days': int.tryParse(_prompt.text),
-        // Parties and the packing date don't save on edit, so they're only sent on create.
-        if (_e == null) ...{
-          for (final (i, p) in _parties.whereType<String>().where((p) => p.trim().isNotEmpty).indexed) 'party_${i + 1}': p.trim(),
-          'duplicate_action': duplicateAction,
-        },
+        for (final (i, p) in _parties.whereType<String>().where((p) => p.trim().isNotEmpty).indexed) 'party_${i + 1}': p.trim(),
+        if (_e == null) 'duplicate_action': duplicateAction,
       };
 
   Future<void> _save() async {
@@ -192,6 +190,7 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
         ),
         WeightFields(pkgs: _pkgs, nett: _nett, total: _total, errors: errors),
         GroupedSection(
+          footer: _e == null ? null : const Text("The date of packing can't be changed after the offer is saved."),
           children: [
             FieldInput(label: 'Gross weight', hint: '720', controller: _gross, suffix: 'kg', keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: decimalOnly),
             if (_e == null)
@@ -207,44 +206,33 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
             FieldInput(label: 'Prompt days', hint: '14', controller: _prompt, keyboardType: TextInputType.number, inputFormatters: digitsOnly),
           ],
         ),
-        if (_e != null)
-          GroupedSection(
-            label: 'Parties',
-            footer: const Text("Parties and the packing date can't be changed after the offer is saved."),
-            children: [
-              if (_e.parties.isEmpty) const InfoRow('None', null),
-              for (final (i, p) in _e.parties.indexed) InfoRow('Party ${i + 1}', p),
-            ],
-          )
-        else ...[
-          GroupedSection(
-            label: 'Parties',
-            footer: const Text('Pick a buyer or type any name. Up to $_maxParties.'),
-            children: [
-              for (var i = 0; i < _parties.length; i++)
-                PartyPickerRow(
-                  label: 'Party ${i + 1}',
-                  value: _parties[i],
-                  onChanged: (v) => setState(() {
-                    if (v == null && _parties.length > 1) {
-                      _parties.removeAt(i);
-                    } else {
-                      _parties[i] = v;
-                    }
-                  }),
-                ),
-            ],
-          ),
-          if (_parties.length < _maxParties)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: SecondaryButton(
-                label: 'Add party',
-                icon: CupertinoIcons.add,
-                onPressed: () => setState(() => _parties.add(null)),
+        GroupedSection(
+          label: 'Parties',
+          footer: const Text('Pick a buyer or type any name. Up to $_maxParties.'),
+          children: [
+            for (var i = 0; i < _parties.length; i++)
+              PartyPickerRow(
+                label: 'Party ${i + 1}',
+                value: _parties[i],
+                onChanged: (v) => setState(() {
+                  if (v == null && _parties.length > 1) {
+                    _parties.removeAt(i);
+                  } else {
+                    _parties[i] = v;
+                  }
+                }),
               ),
+          ],
+        ),
+        if (_parties.length < _maxParties)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SecondaryButton(
+              label: 'Add party',
+              icon: CupertinoIcons.add,
+              onPressed: () => setState(() => _parties.add(null)),
             ),
-        ],
+          ),
       ],
     );
   }

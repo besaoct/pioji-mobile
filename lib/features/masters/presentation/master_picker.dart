@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/design/context_ext.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/design/typography.dart';
+import '../../../core/errors/app_failure.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/fields.dart';
@@ -136,19 +137,150 @@ class MasterPickerRow extends ConsumerWidget {
         }
         final items = await ref.read(provider.future);
         if (!context.mounted) return;
-        if (items.isEmpty) {
+        final creatable = _creatable[provider];
+        if (items.isEmpty && creatable == null) {
           final id = await _askId(context, label, value?.id);
           if (id != null) onChanged(MasterItem(id, '#$id'));
           return;
         }
-        final picked = await showPickerSheet<MasterItem>(
-          context,
-          title: label,
-          selected: value == null ? null : items.where((i) => i.id == value!.id).firstOrNull,
-          options: [for (final i in items) PickOption(i, i.name, subtitle: i.subtitle)],
-        );
+        final picked = creatable != null
+            ? await showModalBottomSheet<MasterItem>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => _CreatableSheet(title: label, provider: provider, kind: creatable, selectedId: value?.id),
+              )
+            : await showPickerSheet<MasterItem>(
+                context,
+                title: label,
+                selected: value == null ? null : items.where((i) => i.id == value!.id).firstOrNull,
+                options: [for (final i in items) PickOption(i, i.name, subtitle: i.subtitle)],
+              );
         if (picked != null) onChanged(picked);
       },
+    );
+  }
+}
+
+/// Lists whose picker can add a new record by name.
+final _creatable = <FutureProvider<List<MasterItem>>, ({String noun, String path, String nameKey})>{
+  buyersProvider: (noun: 'buyer', path: '/buyers', nameKey: 'buyer_name'),
+  sellersProvider: (noun: 'seller', path: '/sellers', nameKey: 'seller_name'),
+};
+
+/// Search a buyer or seller list, or add the typed name as a new one.
+class _CreatableSheet extends ConsumerStatefulWidget {
+  const _CreatableSheet({required this.title, required this.provider, required this.kind, this.selectedId});
+
+  final String title;
+  final FutureProvider<List<MasterItem>> provider;
+  final ({String noun, String path, String nameKey}) kind;
+  final int? selectedId;
+
+  @override
+  ConsumerState<_CreatableSheet> createState() => _CreatableSheetState();
+}
+
+class _CreatableSheetState extends ConsumerState<_CreatableSheet> {
+  String _q = '';
+  bool _creating = false;
+
+  Future<void> _create(String name) async {
+    final noun = widget.kind.noun;
+    final ok = await confirm(
+      context,
+      title: 'Add a new $noun?',
+      body: '“$name” will be added to the ${noun}s list. Other details can be filled in later from the admin panel.',
+      action: 'Add $noun',
+    );
+    if (!ok || !mounted) return;
+    setState(() => _creating = true);
+    try {
+      final item = await ref.read(mastersRepositoryProvider).create(widget.kind.path, widget.kind.nameKey, name);
+      ref.invalidate(widget.provider);
+      if (mounted) Navigator.pop(context, item);
+    } on AppFailure catch (f) {
+      if (mounted) {
+        setState(() => _creating = false);
+        context.toast(f.message);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _creating = false);
+        context.toast("Couldn't add the $noun. Try again.");
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final noun = widget.kind.noun;
+    final list = ref.watch(widget.provider);
+    final q = _q.trim();
+    final all = list.value ?? const <MasterItem>[];
+    final matches = q.isEmpty ? all : all.where((b) => b.name.toLowerCase().contains(q.toLowerCase())).toList();
+    // The server accepts duplicate names, so only offer "add" when nothing matches exactly.
+    final exact = all.any((b) => b.name.toLowerCase() == q.toLowerCase());
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, MediaQuery.of(context).viewInsets.bottom),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(widget.title, style: AppText.title),
+              const SizedBox(height: AppSpace.md),
+              SearchField(hint: 'Search ${noun}s or type a new name', onChanged: (s) => setState(() => _q = s)),
+              const SizedBox(height: AppSpace.md),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (q.isNotEmpty && !exact)
+                        GroupedSection(
+                          children: [
+                            AppListRow(
+                              title: 'Add “$q” as a new $noun',
+                              minHeight: 48,
+                              titleStyle: AppText.body.copyWith(color: c.accent),
+                              leading: _creating
+                                  ? const CupertinoActivityIndicator()
+                                  : Icon(CupertinoIcons.add_circled, color: c.accent, size: 20),
+                              onTap: _creating ? null : () => _create(q),
+                            ),
+                          ],
+                        ),
+                      if (list.isLoading && all.isEmpty)
+                        const Padding(padding: EdgeInsets.all(AppSpace.xl), child: Center(child: CupertinoActivityIndicator()))
+                      else if (matches.isNotEmpty)
+                        GroupedSection(
+                          children: [
+                            for (final i in matches)
+                              AppListRow(
+                                title: i.name,
+                                subtitle: i.subtitle,
+                                minHeight: 48,
+                                titleStyle: AppText.body,
+                                onTap: () => Navigator.pop(context, i),
+                                trailing: i.id == widget.selectedId ? Icon(CupertinoIcons.checkmark_alt, color: c.accent, size: 20) : null,
+                              ),
+                          ],
+                        )
+                      else if (q.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(AppSpace.xl),
+                          child: Center(child: Text('No ${noun}s yet. Type a name above to add one.', style: AppText.callout.copyWith(color: c.textTertiary))),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

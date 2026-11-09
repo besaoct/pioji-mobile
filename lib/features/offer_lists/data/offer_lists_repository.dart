@@ -92,7 +92,13 @@ class OfferListsRepository {
 
   Future<void> create(Map<String, Object?> body) => _api.post('/offer-lists', cleanBody(body));
 
-  Future<void> update(int id, Map<String, Object?> body) => _api.put('/offer-lists/$id', cleanBody(body));
+  /// Parties left out of [body] are sent as null: the server clears a party
+  /// only when it gets null, and keeps it when the key is missing.
+  Future<void> update(int id, Map<String, Object?> body) => _api.put('/offer-lists/$id', {
+        ...cleanBody(body),
+        for (var i = 1; i <= 10; i++)
+          if (!body.containsKey('party_$i')) 'party_$i': null,
+      });
 }
 
 final offerListsRepositoryProvider = Provider((ref) => OfferListsRepository(ref.watch(apiProvider)));
