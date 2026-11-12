@@ -1,9 +1,10 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../errors/app_failure.dart';
 import 'scaffolds.dart';
 import 'states.dart';
+import 'controls.dart';
 
 /// Opens a detail screen by ID. Shows the record passed from the list right
 /// away, then replaces it with the fresh copy from `GET /{module}/{id}`.
@@ -73,7 +74,7 @@ class _DetailLoaderState<T> extends ConsumerState<DetailLoader<T>> {
     }
     return const DetailScaffold(
       title: '',
-      children: [Padding(padding: EdgeInsets.all(48), child: Center(child: CupertinoActivityIndicator()))],
+      children: [Padding(padding: EdgeInsets.all(48), child: Center(child: AppSpinner()))],
     );
   }
 }

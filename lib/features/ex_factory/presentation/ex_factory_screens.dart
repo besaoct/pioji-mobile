@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -25,6 +25,8 @@ import '../../../core/widgets/status_badge.dart';
 import '../../masters/data/masters_repository.dart';
 import '../../masters/presentation/master_picker.dart';
 import '../data/ex_factory_repository.dart';
+import '../../../core/design/app_icons.dart';
+import '../../../core/widgets/controls.dart';
 
 class ExFactoryListScreen extends ConsumerStatefulWidget {
   const ExFactoryListScreen({super.key});
@@ -60,14 +62,14 @@ class _ExFactoryListScreenState extends ConsumerState<ExFactoryListScreen> {
       listProvider: exFactoryListProvider,
       queryProvider: exFactoryQueryProvider,
       searchHint: 'Search bill, supplier, mark or transporter',
-      emptyIcon: CupertinoIcons.doc_chart,
+      emptyIcon: AppIcons.exFactory,
       emptyTitle: 'Add your first bill',
       emptyBody: 'Bills are matched against the sales register automatically.',
       newLabel: 'New bill',
       onNew: () => context.pushNamed(Routes.exFactoryNew),
       actions: [
         _exporting
-            ? const Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: CupertinoActivityIndicator())
+            ? const Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: AppSpinner())
             : LinkButton(label: 'Export', onPressed: _export),
         AddButton(semanticLabel: 'New bill', onPressed: () => context.pushNamed(Routes.exFactoryNew)),
       ],

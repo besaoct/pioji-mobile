@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../design/context_ext.dart';
@@ -6,7 +5,9 @@ import '../design/tokens.dart';
 import '../design/typography.dart';
 import 'app_card.dart';
 import 'app_list_row.dart';
+import 'buttons.dart';
 import 'search_field.dart';
+import '../design/app_icons.dart';
 
 class PickOption<T> {
   const PickOption(this.value, this.label, {this.subtitle});
@@ -83,7 +84,7 @@ class _PickerSheetState<T> extends State<_PickerSheet<T>> {
                                 titleStyle: AppText.body,
                                 onTap: () => Navigator.pop(context, o.value),
                                 trailing: o.value == widget.selected
-                                    ? Icon(CupertinoIcons.checkmark_alt, color: c.accent, size: 20)
+                                    ? AppIcon(AppIcons.check, color: c.accent, size: 20)
                                     : null,
                               ),
                           ],
@@ -175,8 +176,8 @@ class _MultiSheetState<T> extends State<_MultiSheet<T>> {
                               _sel.add(o.value);
                             }
                           }),
-                          trailing: Icon(
-                            _sel.contains(o.value) ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
+                          trailing: AppIcon(
+                            _sel.contains(o.value) ? AppIcons.checkCircleFill : AppIcons.circle,
                             color: _sel.contains(o.value) ? c.accent : c.textTertiary,
                             size: 22,
                           ),
@@ -199,6 +200,102 @@ class _MultiSheetState<T> extends State<_MultiSheet<T>> {
   }
 }
 
+/// Opens [builder] as a centred dialog with a fade and slight scale.
+Future<T?> showAppDialog<T>(BuildContext context, {required WidgetBuilder builder, bool dismissible = true}) {
+  return showGeneralDialog<T>(
+    context: context,
+    barrierDismissible: dismissible,
+    barrierLabel: 'Close',
+    barrierColor: const Color(0x66000000),
+    transitionDuration: const Duration(milliseconds: 180),
+    pageBuilder: (ctx, _, _) => builder(ctx),
+    transitionBuilder: (ctx, a, _, child) {
+      final curved = CurvedAnimation(parent: a, curve: Curves.easeOutCubic);
+      return FadeTransition(
+        opacity: curved,
+        child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(curved), child: child),
+      );
+    },
+  );
+}
+
+class AppDialogAction {
+  const AppDialogAction(this.label, this.onPressed, {this.primary = false, this.destructive = false});
+  final String label;
+  final VoidCallback? onPressed;
+  final bool primary;
+  final bool destructive;
+}
+
+/// Card-style dialog: title, optional body text or content, buttons on the right.
+class AppDialog extends StatelessWidget {
+  const AppDialog({super.key, required this.title, this.body, this.content, required this.actions});
+
+  final String title;
+  final String? body;
+  final Widget? content;
+  final List<AppDialogAction> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 120),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.xxl),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Material(
+              color: c.surfaceRaised,
+              shape: AppRadius.cardBorder,
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpace.xl, AppSpace.xl, AppSpace.md, AppSpace.sm),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: AppSpace.sm),
+                      child: Text(title, style: AppText.headline.copyWith(color: c.textPrimary)),
+                    ),
+                    if (body != null) ...[
+                      const SizedBox(height: AppSpace.sm),
+                      Padding(
+                        padding: const EdgeInsets.only(right: AppSpace.sm),
+                        child: Text(body!, style: AppText.callout.copyWith(color: c.textSecondary)),
+                      ),
+                    ],
+                    if (content != null) ...[
+                      const SizedBox(height: AppSpace.md),
+                      Padding(padding: const EdgeInsets.only(right: AppSpace.sm), child: content!),
+                    ],
+                    const SizedBox(height: AppSpace.md),
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      children: [
+                        for (final a in actions)
+                          LinkButton(
+                            label: a.label,
+                            onPressed: a.onPressed,
+                            color: a.destructive ? c.danger : (a.primary ? c.accent : c.textSecondary),
+                            style: AppText.callout.copyWith(fontWeight: a.primary || a.destructive ? FontWeight.w600 : FontWeight.w500),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 Future<bool> confirm(
   BuildContext context, {
   required String title,
@@ -206,26 +303,21 @@ Future<bool> confirm(
   required String action,
   bool destructive = false,
 }) async {
-  final ok = await showCupertinoDialog<bool>(
-    context: context,
-    builder: (ctx) => CupertinoAlertDialog(
-      title: Text(title),
-      content: Text(body),
+  final ok = await showAppDialog<bool>(
+    context,
+    builder: (ctx) => AppDialog(
+      title: title,
+      body: body,
       actions: [
-        CupertinoDialogAction(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-        CupertinoDialogAction(
-          isDestructiveAction: destructive,
-          isDefaultAction: !destructive,
-          onPressed: () => Navigator.pop(ctx, true),
-          child: Text(action),
-        ),
+        AppDialogAction('Cancel', () => Navigator.pop(ctx, false)),
+        AppDialogAction(action, () => Navigator.pop(ctx, true), primary: !destructive, destructive: destructive),
       ],
     ),
   );
   return ok ?? false;
 }
 
-/// Action sheet with several named choices. Returns the chosen key.
+/// Bottom sheet with several named choices. Returns the chosen key.
 Future<String?> chooseAction(
   BuildContext context, {
   required String title,
@@ -233,20 +325,40 @@ Future<String?> chooseAction(
   required Map<String, String> actions,
   Set<String> destructive = const {},
 }) {
-  return showCupertinoModalPopup<String>(
+  return showModalBottomSheet<String>(
     context: context,
-    builder: (ctx) => CupertinoActionSheet(
-      title: Text(title),
-      message: message == null ? null : Text(message),
-      actions: [
-        for (final e in actions.entries)
-          CupertinoActionSheetAction(
-            isDestructiveAction: destructive.contains(e.key),
-            onPressed: () => Navigator.pop(ctx, e.key),
-            child: Text(e.value),
+    builder: (ctx) {
+      final c = ctx.colors;
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(title, style: AppText.headline),
+              if (message != null) ...[
+                const SizedBox(height: AppSpace.xs),
+                Text(message, style: AppText.footnote.copyWith(color: c.textTertiary)),
+              ],
+              const SizedBox(height: AppSpace.md),
+              GroupedSection(
+                children: [
+                  for (final e in actions.entries)
+                    AppListRow(
+                      title: e.value,
+                      minHeight: 50,
+                      titleStyle: AppText.body.copyWith(color: destructive.contains(e.key) ? c.danger : c.textPrimary),
+                      onTap: () => Navigator.pop(ctx, e.key),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpace.sm),
+              Center(child: LinkButton(label: 'Cancel', color: c.textSecondary, onPressed: () => Navigator.pop(ctx))),
+            ],
           ),
-      ],
-      cancelButton: CupertinoActionSheetAction(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-    ),
+        ),
+      );
+    },
   );
 }

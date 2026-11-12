@@ -13,6 +13,7 @@ abstract final class Fmt {
   static String money(num? v) => v == null ? '–' : _inr.format(v);
   static String number(num? v) => v == null ? '–' : _num.format(v);
   static String kg(num? v) => v == null ? '–' : '${_num.format(v)} kg';
+  static String monthYear(DateTime d) => DateFormat('MMMM yyyy').format(d);
   static String day(DateTime? d) => d == null ? '–' : _day.format(d);
   static String dayShort(DateTime? d) => d == null ? '–' : _dayShort.format(d);
   static String longDay(DateTime d) => _long.format(d);

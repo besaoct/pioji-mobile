@@ -27,12 +27,14 @@ class WeightCalc {
     if (_order.length > 2) _order.removeAt(0);
 
     switch (derived) {
+      // When an input is cleared the calculated field is cleared too, so a
+      // stale value (e.g. 0.25 kg per package) never stays behind.
       case WeightField.total:
-        total = pkgs != null && nett != null ? _round(pkgs * nett) : total;
+        total = pkgs != null && nett != null ? _round(pkgs * nett) : null;
       case WeightField.nett:
-        nett = total != null && pkgs != null && pkgs != 0 ? _round(total / pkgs) : nett;
+        nett = total != null && pkgs != null && pkgs != 0 ? _round(total / pkgs) : null;
       case WeightField.pkgs:
-        pkgs = total != null && nett != null && nett != 0 ? _round(total / nett) : pkgs;
+        pkgs = total != null && nett != null && nett != 0 ? _round(total / nett) : null;
       case null:
         break;
     }

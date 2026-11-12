@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,6 +16,7 @@ import '../../../core/widgets/sheets.dart';
 import '../../../core/widgets/states.dart';
 import '../../offer_lists/data/offer_lists_repository.dart';
 import '../data/allocation_repository.dart';
+import '../../../core/design/app_icons.dart';
 
 class OfferedTodayScreen extends ConsumerStatefulWidget {
   const OfferedTodayScreen({super.key});
@@ -77,7 +77,7 @@ class _OfferedTodayScreenState extends ConsumerState<OfferedTodayScreen> {
 
     final body = Stack(
       children: [
-        LargeTitleScaffold(
+        PageScaffold(
           title: 'Offered today',
           inTabs: false,
           showBack: true,
@@ -95,7 +95,7 @@ class _OfferedTodayScreenState extends ConsumerState<OfferedTodayScreen> {
             AppCard(
               child: Row(
                 children: [
-                  _ArrowButton(icon: CupertinoIcons.chevron_left, label: 'Previous day', onTap: () => _shift(-1)),
+                  _ArrowButton(icon: AppIcons.chevronLeft, label: 'Previous day', onTap: () => _shift(-1)),
                   Expanded(
                     child: GestureDetector(
                       onTap: () async {
@@ -105,7 +105,7 @@ class _OfferedTodayScreenState extends ConsumerState<OfferedTodayScreen> {
                       child: Text(Fmt.longDay(_date), textAlign: TextAlign.center, style: AppText.callout),
                     ),
                   ),
-                  _ArrowButton(icon: CupertinoIcons.chevron_right, label: 'Next day', onTap: () => _shift(1)),
+                  _ArrowButton(icon: AppIcons.chevronRight, label: 'Next day', onTap: () => _shift(1)),
                 ],
               ),
             ),
@@ -128,7 +128,7 @@ class _OfferedTodayScreenState extends ConsumerState<OfferedTodayScreen> {
               data: (d) => items.isEmpty
                   ? const SliverToBoxAdapter(
                       child: EmptyState(
-                        icon: CupertinoIcons.calendar,
+                        icon: AppIcons.calendar,
                         title: 'Nothing offered on this day',
                         body: 'Lots offered for this date show up here, ready for buyer allocation.',
                       ),
@@ -180,7 +180,7 @@ class _OfferedTodayScreenState extends ConsumerState<OfferedTodayScreen> {
 
 class _ArrowButton extends StatelessWidget {
   const _ArrowButton({required this.icon, required this.label, required this.onTap});
-  final IconData icon;
+  final AppIcons icon;
   final String label;
   final VoidCallback onTap;
 
@@ -191,7 +191,7 @@ class _ArrowButton extends StatelessWidget {
       label: label,
       child: GestureDetector(
         onTap: onTap,
-        child: SizedBox(width: 48, height: 48, child: Icon(icon, size: 18, color: context.colors.accent)),
+        child: SizedBox(width: 48, height: 48, child: AppIcon(icon, size: 18, color: context.colors.accent)),
       ),
     );
   }
@@ -217,7 +217,7 @@ class _OfferedCard extends StatelessWidget {
         child: Row(
           children: [
             if (selecting) ...[
-              Icon(selected ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
+              AppIcon(selected ? AppIcons.checkCircleFill : AppIcons.circle,
                   color: selected ? c.accent : c.textTertiary, size: 22),
               const SizedBox(width: AppSpace.md),
             ],
@@ -247,7 +247,7 @@ class _OfferedCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (!selecting) Icon(CupertinoIcons.person_add, color: c.accent, size: 20),
+            if (!selecting) AppIcon(AppIcons.personAdd, color: c.accent, size: 20),
           ],
         ),
       ),

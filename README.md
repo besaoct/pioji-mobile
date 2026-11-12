@@ -8,7 +8,7 @@
 A Flutter app for iOS and Android for tea trading teams: samples, batches, offer lists, buyer allocation, the bid book, courier, contracts, sales and ex-factory reconciliation. It talks to the Tea ERP Laravel API.
 
 - **App ID:** `com.gitcs.pioji` (iOS and Android)
-- **Design:** palette "Assam green iOS", borderless cards, system font, light and dark
+- **Design:** palette "Assam green", borderless cards, Inter, custom controls and icons (no Cupertino), light and dark
 - **Stack:** Flutter 3.44 · Riverpod 3 · go_router 18 · Dio 5
 
 ## Getting started

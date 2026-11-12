@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,6 +22,7 @@ import '../../ex_factory/data/ex_factory_repository.dart';
 import '../../masters/data/masters_repository.dart';
 import '../../masters/presentation/master_picker.dart';
 import '../data/sales_repository.dart';
+import '../../../core/design/app_icons.dart';
 
 class SalesListScreen extends StatelessWidget {
   const SalesListScreen({super.key});
@@ -34,7 +35,7 @@ class SalesListScreen extends StatelessWidget {
       listProvider: salesListProvider,
       queryProvider: salesQueryProvider,
       searchHint: 'Search mark, invoice, buyer or entry',
-      emptyIcon: CupertinoIcons.cart,
+      emptyIcon: AppIcons.sales,
       emptyTitle: 'Record your first sale',
       emptyBody: 'Deals with buyers show up here and are matched against ex-factory bills.',
       newLabel: 'New entry',
@@ -47,7 +48,7 @@ class SalesListScreen extends StatelessWidget {
         ChoiceFilter('tea_grade', 'Grade', {for (final g in kTeaGrades) g: g}),
       ],
       itemBuilder: (context, s) => AppListRow(
-        title: [s.mark ?? 'Mark –', ?s.grade].join(' · '),
+        title: [?s.mark, ?s.grade].join(' · ').isEmpty ? 'Sale #${s.id}' : [?s.mark, ?s.grade].join(' · '),
         subtitle: [s.buyerName, Fmt.invoice(s.invoicePrefix, s.invoiceNo), '${Fmt.kg(s.allQuantity)} × ${Fmt.money(s.rate)}', if (s.isSplit) 'Split ${s.splitCount} ways']
             .whereType<String>()
             .where((e) => e.isNotEmpty)

@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../design/context_ext.dart';
@@ -6,6 +6,7 @@ import '../design/typography.dart';
 import 'one_line_text.dart';
 import 'scaffolds.dart';
 import 'states.dart';
+import '../design/app_icons.dart';
 
 /// Read-only label/value row for detail screens.
 class InfoRow extends StatelessWidget {
@@ -79,7 +80,7 @@ class MissingItemScreen extends StatelessWidget {
       title: what,
       children: [
         EmptyState(
-          icon: CupertinoIcons.doc_text_search,
+          icon: AppIcons.docSearch,
           title: "Couldn't open this",
           body: 'Open the $what from its list.',
           actionLabel: 'Go home',

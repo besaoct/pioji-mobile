@@ -1,4 +1,4 @@
-# Status — 9 Nov 2026
+# Status — 12 Nov 2026
 
 ## Built
 
@@ -6,14 +6,15 @@ All screens in the spec exist and compile with zero analyzer issues:
 
 - Splash, 3-page onboarding, sign in (with session-expired state), Terms and Privacy pages
 - Tab shell with the gradient bottom bar (tablet: side rail)
+- Own look on both platforms (12 Nov 2026): no Cupertino, custom SVG icons, Inter, compact 56 px top bar, custom dialog / sheet / calendar / switch / spinner / pull-to-refresh
 - Home: samples today (with the total), unbatched, open bids, ex-factory mismatches, an all-time sales card (value, kg, pending approval), quick actions, a checklist driven by real counts (now including sales waiting for approval), recent samples. Most counts come from one `GET /dashboard/summary` call
-- Samples: list (status segments, arrival filter), new and edit sample (2-of-3 weights, duplicate "save anyway"), detail with delete
+- Samples: list (status segments, arrival and mark filters, grouped by arrival date → mark → invoice, latest / earliest first), new and edit sample (2-of-3 weights, duplicate "save anyway"), detail with delete
 - Batches: list, new batch (pick unbatched samples, 48 cap), auto-batch for a date, detail, edit (open/completed, notes), delete
-- Offer lists: list (date/grade/type filters), new offer (override / re-offer on duplicates; up to 10 parties, each picked from buyers or typed), detail, edit, delete
+- Offer lists: list (date/grade/type/mark filters, grouped by date → mark → invoice), new offer (override / re-offer on duplicates; up to 10 parties, each picked from buyers or typed), detail, edit, delete
 - Offered today: day switcher, offer/sample tabs, single and multi-select buyer allocation
-- Bid book: tabbed card list, new/edit lot, detail with one-tap status change and delete
+- Bid book: tabbed list grouped by mark, one line per lot (grade · invoice, ask, max bid, status), new/edit lot, detail with one-tap status change and delete
 - Courier: list, new entry (buyer address prefill, barcode scanner, photo, posting lists), detail, edit, delete
-- Contracts: list, new contract with repeatable items and live totals, detail, edit, delete
+- Contracts: list (cover row: date range and buyer; number on the detail), new contract with repeatable items and live totals, detail, edit, delete
 - Sales register: list (pending / approved / rejected), new sale with live amount, detail, edit, delete. A sale split between buyers shows its total packages, kg and value
 - Ex-factory: status summary tiles, list, CSV export + share, new bill (IGST / CGST+SGST with 5% fill), detail, edit, delete
 - Buyer and seller pickers can add a new buyer or seller by name (`POST /buyers`, `POST /sellers`)
@@ -34,6 +35,7 @@ On 31 Oct 2026, signed in as admin: every list, lookup and detail response was f
 - The offer, sale and ex-factory edit screens (7 Nov 2026), 10 parties and party edits, and new buyer / seller (9 Nov 2026) were tested against the API with the app's exact request bodies, not yet in the simulator.
 - Buyer and seller create were tested on the server and the TEST records deleted.
 - The dashboard-driven Home and split sale totals (9 Nov 2026) were checked by parsing live responses with the app's models, not yet in the simulator.
+- 12 Nov 2026 rebuild: every tab, list, detail, form, dialog, calendar, switch and picker checked in the iOS simulator (light and dark). Android only through the CI build.
 
 ## API status
 
@@ -60,7 +62,22 @@ Re-checked against the staging server on 9 Nov 2026, signed in as admin, with ma
 
 ### Needs fixes from the API developer
 
-None open as of 9 Nov 2026.
+The 5 Nov issues are all fixed (9 Nov 2026). New requests from the client's feedback, checked on staging 12 Nov 2026 (full spec in the shared doc "Pioji – Backend requests from client feedback"):
+
+| # | Priority | Request |
+|---|---|---|
+| 1 | 1 | `sort_by` + `sort_dir` on every list (all sort params are ignored today) |
+| 2 | 1 | `garden_id` filter on samples, offers, bids, sales (`mark=` is ignored; only `search` matches) |
+| 3 | 1 | `GET /posting-lists?buyer_id=` (lists have no buyer link) |
+| 4 | 1 | `GET /gardens/{id}/grades` and fill `type_configs` (1 of the first 200 gardens has it) |
+| 5 | 1 | Permission to lock the arrival date to today, enforced on save, listed in `/auth/me` |
+| 6 | 2 | User and role endpoints (`/users`, `/roles` are 404) |
+| 7 | 2 | Sample fields: billing company ("for whom"), original / standard, outgoing party |
+| 8 | 2 | `POST` / `PATCH /bid-book/bulk` (today `GET /bid-book/bulk` → 500) |
+| 9 | 3 | Tasting save, park / unpark, tasting report |
+| 10 | 3 | Permissions for who creates offers and allocates buyers |
+
+Also: admin's role shows as `supervisor`; `GET /sales-register/{id}` lacks the list's split fields; the dashboard's sales total counts split records.
 
 ## Not built yet (from the spec)
 

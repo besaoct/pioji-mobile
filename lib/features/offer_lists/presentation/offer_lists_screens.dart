@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,6 +22,7 @@ import '../../../core/widgets/weight_fields.dart';
 import '../../masters/data/masters_repository.dart';
 import '../../masters/presentation/master_picker.dart';
 import '../data/offer_lists_repository.dart';
+import '../../../core/design/app_icons.dart';
 
 class OfferListsScreen extends StatelessWidget {
   const OfferListsScreen({super.key});
@@ -33,7 +34,7 @@ class OfferListsScreen extends StatelessWidget {
       listProvider: offerListsListProvider,
       queryProvider: offerListsQueryProvider,
       searchHint: 'Search garden, grade, AWR no or key',
-      emptyIcon: CupertinoIcons.doc_text,
+      emptyIcon: AppIcons.offers,
       emptyTitle: 'Add your first offer',
       emptyBody: 'Lots offered to buyers show up here with their price.',
       newLabel: 'New offer',
@@ -47,7 +48,14 @@ class OfferListsScreen extends StatelessWidget {
         const DateFilter('date_to', 'To'),
         ChoiceFilter('grade', 'Grade', {for (final g in kTeaGrades) g: g}),
         const ChoiceFilter('type', 'Type', {'Tea': 'Tea'}),
+        const PickerFilter('mark', 'Mark', pickMark),
       ],
+      sortable: true,
+      grouping: ListGrouping(
+        section: (o) => o.date == null ? 'No date' : Fmt.day(o.date),
+        subgroup: (o) => o.gardenName,
+        order: (o) => o.invNo,
+      ),
       itemBuilder: (context, o) => AppListRow(
         title: o.title,
         subtitle: [
@@ -60,8 +68,11 @@ class OfferListsScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(o.price != null ? Fmt.money(o.price) : Fmt.kg(o.totalKgs), style: AppText.callout.copyWith(fontWeight: o.price != null ? FontWeight.w600 : FontWeight.w400)),
-            const SizedBox(height: 2),
-            Text(Fmt.dayShort(o.date), style: AppText.footnote.copyWith(color: context.colors.textTertiary)),
+            // The date is the group heading, so the second line is the weight.
+            if (o.price != null) ...[
+              const SizedBox(height: 2),
+              Text(Fmt.kg(o.totalKgs), style: AppText.footnote.copyWith(color: context.colors.textTertiary)),
+            ],
           ],
         ),
       ),
@@ -224,7 +235,7 @@ class _OfferFormScreenState extends ConsumerState<OfferFormScreen> with FormSubm
             alignment: Alignment.centerLeft,
             child: SecondaryButton(
               label: 'Add party',
-              icon: CupertinoIcons.add,
+              icon: AppIcons.add,
               onPressed: () => setState(() => _parties.add(null)),
             ),
           ),

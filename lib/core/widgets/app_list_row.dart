@@ -1,9 +1,10 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 import '../design/context_ext.dart';
 import '../design/tokens.dart';
 import '../design/typography.dart';
 import 'one_line_text.dart';
+import '../design/app_icons.dart';
 
 /// A list row: optional icon tile, one-line title and subtitle, trailing
 /// widgets that never shrink, optional chevron. Min height 48.
@@ -55,7 +56,7 @@ class AppListRow extends StatelessWidget {
             if (trailing != null) ...[const SizedBox(width: AppSpace.sm + 2), trailing!],
             if (showChevron) ...[
               const SizedBox(width: AppSpace.sm),
-              Icon(CupertinoIcons.chevron_right, size: 15, color: c.textTertiary),
+              AppIcon(AppIcons.chevronRight, size: 15, color: c.textTertiary),
             ],
           ],
         ),
@@ -73,7 +74,7 @@ class AppListRow extends StatelessWidget {
 class IconTile extends StatelessWidget {
   const IconTile({super.key, this.icon, this.initial, this.color, this.background, this.size = 30});
 
-  final IconData? icon;
+  final AppIcons? icon;
   final String? initial;
   final Color? color;
   final Color? background;
@@ -92,7 +93,7 @@ class IconTile extends StatelessWidget {
         shape: const RoundedSuperellipseBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
       ),
       child: icon != null
-          ? Icon(icon, size: size * 0.55, color: fg)
+          ? AppIcon(icon!, size: size * 0.55, color: fg)
           : Text(initial ?? '', style: AppText.footnote.copyWith(color: fg, fontWeight: FontWeight.w600)),
     );
   }

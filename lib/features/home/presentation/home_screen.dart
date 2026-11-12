@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,6 +16,8 @@ import '../../../core/widgets/scaffolds.dart';
 import '../../sales_register/data/sales_repository.dart';
 import '../../samples/presentation/samples_list_screen.dart';
 import '../application/home_providers.dart';
+import '../../../core/design/app_icons.dart';
+import '../../../core/widgets/controls.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -38,28 +40,28 @@ class HomeScreen extends ConsumerWidget {
     final checklist = <Widget>[
       if ((unbatched.value ?? 0) > 0)
         _CheckRow(
-          icon: CupertinoIcons.square_stack_3d_up,
+          icon: AppIcons.batches,
           text: "${unbatched.value} ${unbatched.value == 1 ? "sample isn't" : "samples aren't"} in a batch yet",
           action: 'Auto-batch',
           onTap: () => context.pushNamed(Routes.batchAuto),
         ),
       if ((unallocated.value ?? 0) > 0)
         _CheckRow(
-          icon: CupertinoIcons.person_2,
+          icon: AppIcons.people,
           text: '${unallocated.value} ${unallocated.value == 1 ? 'lot' : 'lots'} offered today ${unallocated.value == 1 ? 'has' : 'have'} no buyers',
           action: 'Allocate',
           onTap: () => context.pushNamed(Routes.offeredToday),
         ),
       if ((awaiting.value ?? 0) > 0)
         _CheckRow(
-          icon: CupertinoIcons.hammer,
+          icon: AppIcons.bids,
           text: '${awaiting.value} ${awaiting.value == 1 ? 'bid is' : 'bids are'} awaiting allocation',
           action: 'Review',
           onTap: () => context.goNamed(Routes.bids),
         ),
       if (pendingSales > 0)
         _CheckRow(
-          icon: CupertinoIcons.checkmark_rectangle,
+          icon: AppIcons.approval,
           text: '$pendingSales ${pendingSales == 1 ? 'sale is' : 'sales are'} waiting for approval',
           action: 'Review',
           onTap: () {
@@ -69,7 +71,7 @@ class HomeScreen extends ConsumerWidget {
         ),
       if (unregistered > 0)
         _CheckRow(
-          icon: CupertinoIcons.doc_chart,
+          icon: AppIcons.exFactory,
           text: '$unregistered ex-factory ${unregistered == 1 ? 'bill is' : 'bills are'} unregistered',
           action: 'Open',
           onTap: () => context.pushNamed(Routes.exFactory),
@@ -77,7 +79,7 @@ class HomeScreen extends ConsumerWidget {
     ];
     final checklistLoading = unbatched.isLoading || unallocated.isLoading || awaiting.isLoading || dash.isLoading;
 
-    return LargeTitleScaffold(
+    return PageScaffold(
       title: 'Today',
       caption: Fmt.longDay(DateTime.now()),
       onRefresh: () async {
@@ -122,10 +124,10 @@ class HomeScreen extends ConsumerWidget {
             _Label('Quick actions'),
             Row(
               children: [
-                _Quick(icon: CupertinoIcons.lab_flask, label: 'New sample', onTap: () => context.pushNamed(Routes.sampleNew)),
-                _Quick(icon: CupertinoIcons.doc_on_doc, label: 'New offer', onTap: () => context.pushNamed(Routes.offerNew)),
-                _Quick(icon: CupertinoIcons.person_add, label: 'Allocate', onTap: () => context.pushNamed(Routes.offeredToday)),
-                _Quick(icon: CupertinoIcons.cube_box, label: 'Courier', onTap: () => context.pushNamed(Routes.courierNew)),
+                _Quick(icon: AppIcons.samples, label: 'New sample', onTap: () => context.pushNamed(Routes.sampleNew)),
+                _Quick(icon: AppIcons.offers, label: 'New offer', onTap: () => context.pushNamed(Routes.offerNew)),
+                _Quick(icon: AppIcons.personAdd, label: 'Allocate', onTap: () => context.pushNamed(Routes.offeredToday)),
+                _Quick(icon: AppIcons.courier, label: 'Courier', onTap: () => context.pushNamed(Routes.courierNew)),
               ],
             ),
             const SizedBox(height: AppSpace.xl),
@@ -134,7 +136,7 @@ class HomeScreen extends ConsumerWidget {
               AppCard(
                 padding: const EdgeInsets.all(14),
                 child: Row(children: [
-                  Icon(checklistLoading ? CupertinoIcons.clock : CupertinoIcons.checkmark_seal, color: checklistLoading ? c.textTertiary : c.success, size: 20),
+                  AppIcon(checklistLoading ? AppIcons.clock : AppIcons.allDone, color: checklistLoading ? c.textTertiary : c.success, size: 20),
                   const SizedBox(width: 10),
                   Text(checklistLoading ? 'Checking…' : "You're all caught up.", style: AppText.callout),
                 ]),
@@ -144,7 +146,7 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: AppSpace.xl),
             _Label('Recent samples'),
             recent.when(
-              loading: () => const AppCard(child: SizedBox(height: 112, child: Center(child: CupertinoActivityIndicator()))),
+              loading: () => const AppCard(child: SizedBox(height: 112, child: Center(child: AppSpinner()))),
               error: (e, _) => AppCard(
                 padding: const EdgeInsets.all(14),
                 child: Text("Couldn't load recent samples.", style: AppText.callout.copyWith(color: c.textTertiary)),
@@ -220,7 +222,7 @@ class _Label extends StatelessWidget {
 
 class _Quick extends StatelessWidget {
   const _Quick({required this.icon, required this.label, required this.onTap});
-  final IconData icon;
+  final AppIcons icon;
   final String label;
   final VoidCallback onTap;
 
@@ -245,7 +247,7 @@ class _Quick extends StatelessWidget {
                   shadows: c.cardShadow,
                   shape: const RoundedSuperellipseBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
                 ),
-                child: Icon(icon, color: c.accent, size: 24),
+                child: AppIcon(icon, color: c.accent, size: 24),
               ),
               const SizedBox(height: 6),
               OneLineText(label, style: AppText.caption.copyWith(color: c.textSecondary, fontWeight: FontWeight.w400)),
@@ -259,7 +261,7 @@ class _Quick extends StatelessWidget {
 
 class _CheckRow extends StatelessWidget {
   const _CheckRow({required this.icon, required this.text, required this.action, required this.onTap});
-  final IconData icon;
+  final AppIcons icon;
   final String text;
   final String action;
   final VoidCallback onTap;

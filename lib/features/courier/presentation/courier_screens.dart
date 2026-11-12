@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,6 +25,7 @@ import '../../../core/widgets/status_badge.dart';
 import '../../masters/data/masters_repository.dart';
 import '../../masters/presentation/master_picker.dart';
 import '../data/courier_repository.dart';
+import '../../../core/design/app_icons.dart';
 
 const _days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -40,7 +40,7 @@ class CourierListScreen extends StatelessWidget {
       listProvider: courierListProvider,
       queryProvider: courierQueryProvider,
       searchHint: 'Search entry, tracking, courier or buyer',
-      emptyIcon: CupertinoIcons.cube_box,
+      emptyIcon: AppIcons.courier,
       emptyTitle: 'Log your first parcel',
       emptyBody: 'Sample parcels sent to buyers show up here with their tracking number.',
       newLabel: 'New entry',
@@ -288,7 +288,7 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
               inputFormatters: alphanumericOnly,
               textCapitalization: TextCapitalization.characters,
               trailing: CircleIconButton(
-                icon: CupertinoIcons.barcode_viewfinder,
+                icon: AppIcons.barcodeScan,
                 tinted: true,
                 semanticLabel: 'Scan barcode',
                 onPressed: _scan,
@@ -354,12 +354,12 @@ class _CourierFormScreenState extends ConsumerState<CourierFormScreen> with Form
                       ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(CupertinoIcons.camera, color: c.accent),
+                            AppIcon(AppIcons.camera, color: c.accent),
                             const SizedBox(height: 2),
                             Text('Photo', style: AppText.caption.copyWith(color: c.accent)),
                           ],
                         )
-                      : Icon(CupertinoIcons.checkmark_alt_circle_fill, color: c.success, size: 30),
+                      : AppIcon(AppIcons.checkCircleFill, color: c.success, size: 30),
                 ),
               ),
               const SizedBox(width: AppSpace.md),

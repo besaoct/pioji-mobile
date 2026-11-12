@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +24,7 @@ import '../../../core/widgets/status_badge.dart';
 import '../../masters/data/masters_repository.dart';
 import '../../masters/presentation/master_picker.dart';
 import '../data/bid_book_repository.dart';
+import '../../../core/design/app_icons.dart';
 
 class BidBookScreen extends StatelessWidget {
   const BidBookScreen({super.key});
@@ -33,11 +33,10 @@ class BidBookScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ModuleListScreen<Bid>(
       title: 'Bid book',
-      asCards: true,
       listProvider: bidBookListProvider,
       queryProvider: bidBookQueryProvider,
       searchHint: 'Search invoice, garden or buyer',
-      emptyIcon: CupertinoIcons.hammer,
+      emptyIcon: AppIcons.bids,
       emptyTitle: 'Add your first lot',
       emptyBody: 'Lots under negotiation show up here with their prices.',
       newLabel: 'New lot',
@@ -50,79 +49,57 @@ class BidBookScreen extends StatelessWidget {
         'held': 'Held',
         'awaiting_allocation': 'Awaiting',
       }),
-      filters: [ChoiceFilter('grade', 'Grade', {for (final g in kTeaGrades) g: g})],
-      itemBuilder: (context, b) => BidCard(bid: b),
+      filters: [
+        ChoiceFilter('grade', 'Grade', {for (final g in kTeaGrades) g: g}),
+        const PickerFilter('mark', 'Mark', pickMark),
+      ],
+      // All lots of one mark together, in invoice order.
+      grouping: ListGrouping(section: (b) => b.gardenName, order: (b) => b.invoiceNumber),
+      itemBuilder: (context, b) => BidRow(bid: b),
     );
   }
 }
 
-class BidCard extends StatelessWidget {
-  const BidCard({super.key, required this.bid});
+/// One line per lot: grade and invoice, asking price and max bid, status.
+/// Packages, buyer and negotiator are on the detail screen.
+class BidRow extends StatelessWidget {
+  const BidRow({super.key, required this.bid});
   final Bid bid;
+
+  static String _price(double? v) => v == null ? '–' : '₹${Fmt.number(v)}';
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     final b = bid;
-    Widget price(String label, double? v, {bool strong = false}) => Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppText.caption.copyWith(color: c.textTertiary, fontWeight: FontWeight.w400)),
-              FitText(Fmt.money(v),
-                  style: AppText.callout.copyWith(
-                    fontWeight: strong ? FontWeight.w600 : FontWeight.w400,
-                    color: strong ? c.accent : c.textPrimary,
-                  )),
-            ],
-          ),
-        );
-    return AppCard(
-      onTap: () => context.pushNamed(Routes.bidDetail, pathParameters: {'id': '${b.id}'}, extra: b),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    OneLineText('${b.gardenName} · ${b.grade}', style: AppText.body.copyWith(fontWeight: FontWeight.w500)),
-                    OneLineText(
-                      '${b.invoiceNumber} · ${b.packages ?? '–'} pkgs · ${Fmt.kg(b.netWeight)}',
-                      style: AppText.footnote.copyWith(color: c.textTertiary),
-                    ),
-                  ],
+    final figures = AppText.footnote.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => context.pushNamed(Routes.bidDetail, pathParameters: {'id': '${b.id}'}, extra: b),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg - 2, vertical: AppSpace.sm),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OneLineText('${b.grade} · ${b.invoiceNumber}',
+                      style: AppText.callout.copyWith(fontWeight: FontWeight.w500, color: c.textPrimary)),
                 ),
-              ),
-              const SizedBox(width: AppSpace.sm),
-              StatusBadge(b.status.label, tone: b.status.tone),
-            ],
+                const SizedBox(width: AppSpace.sm),
+                Text('Ask ', style: figures.copyWith(color: c.textTertiary)),
+                Text(_price(b.incoming), style: figures.copyWith(color: c.textPrimary)),
+                const SizedBox(width: AppSpace.md),
+                Text('Max ', style: figures.copyWith(color: c.textTertiary)),
+                Text(_price(b.maxBid), style: figures.copyWith(color: c.accent, fontWeight: FontWeight.w600)),
+                const SizedBox(width: AppSpace.md),
+                StatusBadge(b.status.label, tone: b.status.tone),
+              ],
+            ),
           ),
-          const SizedBox(height: AppSpace.md),
-          Row(children: [price('Incoming', b.incoming), price('Max bid', b.maxBid), price('Negotiated', b.negotiated, strong: true)]),
-          const SizedBox(height: AppSpace.md),
-          const Divider(),
-          const SizedBox(height: AppSpace.sm),
-          Row(
-            children: [
-              Expanded(
-                child: OneLineText(
-                  b.buyerName ?? (b.buyerId == null ? 'Unallocated' : 'Buyer #${b.buyerId}'),
-                  style: AppText.footnote.copyWith(
-                    color: b.buyerId == null ? c.warning : c.textSecondary,
-                    fontWeight: b.buyerId == null ? FontWeight.w500 : FontWeight.w400,
-                  ),
-                ),
-              ),
-              if (b.negotiatorName != null)
-                Flexible(child: OneLineText('Negotiator: ${b.negotiatorName}', style: AppText.footnote.copyWith(color: c.textTertiary))),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

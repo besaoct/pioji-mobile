@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design/context_ext.dart';
@@ -9,8 +9,10 @@ import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/buttons.dart';
 import '../../../core/widgets/module_list.dart';
 import '../../../core/widgets/status_badge.dart';
+import '../../masters/presentation/master_picker.dart';
 import '../data/samples_repository.dart';
 import '../domain/sample.dart';
+import '../../../core/design/app_icons.dart';
 
 class SamplesListScreen extends StatelessWidget {
   const SamplesListScreen({super.key});
@@ -22,7 +24,7 @@ class SamplesListScreen extends StatelessWidget {
       listProvider: samplesListProvider,
       queryProvider: samplesQueryProvider,
       searchHint: 'Search garden, grade or invoice',
-      emptyIcon: CupertinoIcons.lab_flask,
+      emptyIcon: AppIcons.samples,
       emptyTitle: 'Add your first sample',
       emptyBody: 'Samples you receive show up here with their grade and weight.',
       newLabel: 'New sample',
@@ -35,7 +37,13 @@ class SamplesListScreen extends StatelessWidget {
         '': 'All',
         for (final s in SampleStatus.pickable) s.api: s.label,
       }),
-      filters: const [DateFilter('arrival_date', 'Arrival')],
+      filters: const [DateFilter('arrival_date', 'Arrival'), PickerFilter('mark', 'Mark', pickMark)],
+      sortable: true,
+      grouping: ListGrouping(
+        section: (s) => s.arrivalDate == null ? 'No arrival date' : Fmt.day(s.arrivalDate),
+        subgroup: (s) => s.gardenName,
+        order: (s) => s.invoiceNo,
+      ),
       itemBuilder: (context, s) => SampleRow(sample: s),
     );
   }

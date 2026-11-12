@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,16 +5,87 @@ import '../design/context_ext.dart';
 import '../design/tokens.dart';
 import '../design/typography.dart';
 import 'buttons.dart';
+import 'controls.dart';
 import 'one_line_text.dart';
 import 'states.dart';
+import '../design/app_icons.dart';
 
 /// Height reserved at the bottom of tab screens for the tab bar.
 const kTabBarReserve = 120.0;
 
-/// Tab root and pushed list screens: actions row, large title, scrolling
-/// content, pull-to-refresh.
-class LargeTitleScaffold extends StatelessWidget {
-  const LargeTitleScaffold({
+/// Fixed 56 px top bar: optional back or close button, title (with an
+/// optional caption under it) and actions on the right.
+class AppTopBar extends StatelessWidget {
+  const AppTopBar({super.key, required this.title, this.caption, this.leading, this.actions = const []});
+
+  final String title;
+  final String? caption;
+  final Widget? leading;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return SizedBox(
+      height: 56,
+      child: Padding(
+        padding: EdgeInsets.only(left: leading == null ? AppSpace.screenH : AppSpace.xs, right: AppSpace.sm),
+        child: Row(
+          children: [
+            ?leading,
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    OneLineText(title, style: (leading == null ? AppText.title : AppText.headline).copyWith(color: c.textPrimary)),
+                    if (caption != null) OneLineText(caption!, style: AppText.footnote.copyWith(color: c.textTertiary)),
+                  ],
+                ),
+              ),
+            ),
+            ...actions,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Square 44 px icon button for top bars.
+class TopBarIcon extends StatelessWidget {
+  const TopBarIcon({super.key, required this.icon, required this.semanticLabel, required this.onPressed, this.color});
+
+  final AppIcons icon;
+  final String semanticLabel;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(child: AppIcon(icon, size: 22, color: color ?? context.colors.textPrimary)),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tab root and pushed list screens: fixed top bar, then a scrolling body
+/// with optional header widgets and pull-to-refresh.
+class PageScaffold extends StatelessWidget {
+  const PageScaffold({
     super.key,
     required this.title,
     this.caption,
@@ -40,33 +110,15 @@ class LargeTitleScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
     final canPop = showBack || GoRouter.of(context).canPop();
-    final topBar = SizedBox(
-      height: 44,
-      child: Row(
-        children: [
-          if (canPop) const BackLink(),
-          const Spacer(),
-          ...actions,
-        ],
-      ),
-    );
-
-    final scroll = CustomScrollView(
+    Widget scroll = CustomScrollView(
       controller: controller,
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        if (onRefresh != null) CupertinoSliverRefreshControl(onRefresh: onRefresh),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpace.screenH),
+          padding: const EdgeInsets.fromLTRB(AppSpace.screenH, AppSpace.xs, AppSpace.screenH, 0),
           sliver: SliverList.list(
             children: [
-              topBar,
-              if (caption != null)
-                Text(caption!, style: AppText.footnote.copyWith(color: c.textTertiary)),
-              Semantics(header: true, child: OneLineText(title, style: AppText.largeTitle)),
-              const SizedBox(height: AppSpace.md),
               const OfflineBanner(),
               ...header,
             ],
@@ -77,40 +129,33 @@ class LargeTitleScaffold extends StatelessWidget {
         SliverToBoxAdapter(child: SizedBox(height: inTabs ? kTabBarReserve : AppSpace.xxxl)),
       ],
     );
+    if (onRefresh != null) scroll = AppRefresh(onRefresh: onRefresh!, child: scroll);
 
-    return Scaffold(body: SafeArea(bottom: false, child: scroll));
-  }
-}
-
-class BackLink extends StatelessWidget {
-  const BackLink({super.key, this.label = 'Back'});
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Semantics(
-      button: true,
-      label: label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => context.pop(),
-        child: SizedBox(
-          height: 44,
-          child: Row(
-            children: [
-              Icon(CupertinoIcons.chevron_left, color: c.accent, size: 22),
-              Text(label, style: AppText.body.copyWith(color: c.accent)),
-            ],
-          ),
+    return Scaffold(
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            AppTopBar(title: title, caption: caption, leading: canPop ? const BackLink() : null, actions: actions),
+            Expanded(child: scroll),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Full-screen form above the tab bar: Cancel / title / optional trailing,
+/// Back arrow for top bars.
+class BackLink extends StatelessWidget {
+  const BackLink({super.key, this.label = 'Back'});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) =>
+      TopBarIcon(icon: AppIcons.chevronLeft, semanticLabel: label, onPressed: () => context.pop());
+}
+
+/// Full-screen form above the tab bar: close / title / optional trailing,
 /// scrolling body, sticky primary button above the keyboard.
 class FormScaffold extends StatelessWidget {
   const FormScaffold({
@@ -142,26 +187,10 @@ class FormScaffold extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            SizedBox(
-              height: 48,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 88,
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: LinkButton(label: 'Cancel', onPressed: onCancel ?? () => context.pop()),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(title, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.headline),
-                    ),
-                    SizedBox(width: 88, child: Align(alignment: Alignment.centerRight, child: trailing)),
-                  ],
-                ),
-              ),
+            AppTopBar(
+              title: title,
+              leading: TopBarIcon(icon: AppIcons.close, semanticLabel: 'Cancel', onPressed: onCancel ?? () => context.pop()),
+              actions: [?trailing],
             ),
             Expanded(
               child: GestureDetector(
@@ -197,7 +226,7 @@ class FormScaffold extends StatelessWidget {
   }
 }
 
-/// Pushed read-only screen with a back link and a title.
+/// Pushed read-only screen with a back arrow and a title.
 class DetailScaffold extends StatelessWidget {
   const DetailScaffold({super.key, required this.title, required this.children, this.actions = const []});
 
@@ -207,7 +236,7 @@ class DetailScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LargeTitleScaffold(
+    return PageScaffold(
       title: title,
       actions: actions,
       inTabs: false,

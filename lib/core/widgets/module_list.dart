@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,6 +12,8 @@ import 'fields.dart';
 import 'scaffolds.dart';
 import 'search_field.dart';
 import 'states.dart';
+import '../design/app_icons.dart';
+import 'controls.dart';
 
 /// A status segment bar bound to one query parameter. The first option
 /// should have an empty value ("All").
@@ -38,6 +39,22 @@ class ChoiceFilter extends FilterConfig {
   final Map<String, String> options;
 }
 
+/// A value picked from a sheet the screen provides (e.g. a mark from the
+/// garden list). [pick] returns the value to filter by.
+class PickerFilter extends FilterConfig {
+  const PickerFilter(super.param, super.label, this.pick);
+  final Future<String?> Function(BuildContext context) pick;
+}
+
+/// Groups list rows: a heading per [section], then rows sorted by
+/// [subgroup] (shown as a small header) and [order].
+class ListGrouping<T> {
+  const ListGrouping({required this.section, this.subgroup, this.order});
+  final String Function(T item) section;
+  final String? Function(T item)? subgroup;
+  final String? Function(T item)? order;
+}
+
 /// The list screen every module shares: large title, search, status
 /// segments, filter chips, pagination, and every loading/empty/error state.
 class ModuleListScreen<T> extends ConsumerStatefulWidget {
@@ -59,6 +76,8 @@ class ModuleListScreen<T> extends ConsumerStatefulWidget {
     this.header = const [],
     this.inTabs = true,
     this.asCards = false,
+    this.grouping,
+    this.sortable = false,
   });
 
   final String title;
@@ -68,7 +87,7 @@ class ModuleListScreen<T> extends ConsumerStatefulWidget {
   final String searchHint;
   final String emptyTitle;
   final String emptyBody;
-  final IconData emptyIcon;
+  final AppIcons emptyIcon;
   final String? newLabel;
   final VoidCallback? onNew;
   final SegmentConfig? segments;
@@ -79,6 +98,11 @@ class ModuleListScreen<T> extends ConsumerStatefulWidget {
 
   /// Each item is its own card instead of rows in one grouped card.
   final bool asCards;
+
+  final ListGrouping<T>? grouping;
+
+  /// Shows a Latest first / Earliest first switch.
+  final bool sortable;
 
   @override
   ConsumerState<ModuleListScreen<T>> createState() => _ModuleListScreenState<T>();
@@ -151,7 +175,7 @@ class _ModuleListScreenState<T> extends ConsumerState<ModuleListScreen<T>> {
             SliverToBoxAdapter(
               child: filtered
                   ? EmptyState(
-                      icon: CupertinoIcons.search,
+                      icon: AppIcons.search,
                       title: 'Nothing matches',
                       body: 'Try a different search or clear the filters.',
                       actionLabel: 'Clear filters',
@@ -167,19 +191,33 @@ class _ModuleListScreenState<T> extends ConsumerState<ModuleListScreen<T>> {
             ),
           ];
         }
+        // Earliest first: the API can't sort yet, so load every page and
+        // reverse it here.
+        if (query.oldestFirst && s.hasMore) {
+          if (!s.loadingMore && s.loadMoreError == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) ref.read(widget.listProvider.notifier).loadMore();
+            });
+          }
+          if (s.loadMoreError == null) return [const SliverToBoxAdapter(child: SkeletonList())];
+        }
+        final shown = query.oldestFirst ? s.items.reversed.toList() : s.items;
+        if (widget.grouping != null && !widget.asCards) {
+          return [..._grouped(c, shown), SliverToBoxAdapter(child: _footer(c, s))];
+        }
         final items = widget.asCards
             ? SliverList.separated(
-                itemCount: s.items.length,
+                itemCount: shown.length,
                 separatorBuilder: (_, _) => const SizedBox(height: AppSpace.md),
-                itemBuilder: (ctx, i) => widget.itemBuilder(ctx, s.items[i]),
+                itemBuilder: (ctx, i) => widget.itemBuilder(ctx, shown[i]),
               )
             : SliverToBoxAdapter(
                 child: AppCard(
                   child: Column(
                     children: [
-                      for (var i = 0; i < s.items.length; i++) ...[
-                        if (i > 0) const Divider(indent: AppSpace.lg - 2, height: 0.5),
-                        widget.itemBuilder(context, s.items[i]),
+                      for (var i = 0; i < shown.length; i++) ...[
+                        if (i > 0) const Divider(height: 0.5),
+                        widget.itemBuilder(context, shown[i]),
                       ],
                     ],
                   ),
@@ -192,7 +230,7 @@ class _ModuleListScreenState<T> extends ConsumerState<ModuleListScreen<T>> {
       },
     );
 
-    return LargeTitleScaffold(
+    return PageScaffold(
       title: widget.title,
       controller: _scroll,
       inTabs: widget.inTabs,
@@ -203,6 +241,57 @@ class _ModuleListScreenState<T> extends ConsumerState<ModuleListScreen<T>> {
     );
   }
 
+  static int _compare(String? a, String? b) {
+    final x = a ?? '', y = b ?? '';
+    final nx = int.tryParse(x), ny = int.tryParse(y);
+    if (nx != null && ny != null) return nx.compareTo(ny);
+    return x.toLowerCase().compareTo(y.toLowerCase());
+  }
+
+  List<Widget> _grouped(AppColors c, List<T> items) {
+    final g = widget.grouping!;
+    final sections = <String, List<T>>{};
+    for (final it in items) {
+      sections.putIfAbsent(g.section(it), () => []).add(it);
+    }
+    final out = <Widget>[];
+    for (final e in sections.entries) {
+      final rows = [...e.value]..sort((a, b) {
+          final bySub = g.subgroup == null ? 0 : _compare(g.subgroup!(a), g.subgroup!(b));
+          return bySub != 0 ? bySub : (g.order == null ? 0 : _compare(g.order!(a), g.order!(b)));
+        });
+      final children = <Widget>[];
+      String? lastSub;
+      for (var i = 0; i < rows.length; i++) {
+        final sub = g.subgroup?.call(rows[i]);
+        if (g.subgroup != null && (i == 0 || sub != lastSub)) {
+          final count = rows.where((r) => g.subgroup!(r) == sub).length;
+          if (i > 0) children.add(const Divider(height: 0.5));
+          children.add(Container(
+            color: c.background,
+            padding: const EdgeInsets.fromLTRB(AppSpace.lg - 2, 6, AppSpace.lg - 2, 6),
+            child: Text('${sub ?? 'No mark'} · $count',
+                style: AppText.caption.copyWith(color: c.textSecondary, fontWeight: FontWeight.w600)),
+          ));
+        } else if (i > 0) {
+          children.add(const Divider(height: 0.5));
+        }
+        lastSub = sub;
+        children.add(widget.itemBuilder(context, rows[i]));
+      }
+      out.add(SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AppSpace.lg),
+          child: GroupedSection(
+            label: '${e.key} · ${rows.length}',
+            children: [Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children)],
+          ),
+        ),
+      ));
+    }
+    return out;
+  }
+
   Widget _filterBar(BuildContext context, AppColors c, ListQuery q, ListQueryNotifier ctl, PagedState<T>? s) {
     final chips = <Widget>[];
     for (final f in widget.filters) {
@@ -211,6 +300,7 @@ class _ModuleListScreenState<T> extends ConsumerState<ModuleListScreen<T>> {
       final shown = switch (f) {
         DateFilter() => Fmt.day(DateTime.tryParse(v)),
         ChoiceFilter(:final options) => options[v] ?? v,
+        PickerFilter() => v,
       };
       chips.add(_Chip(label: '${f.label}: $shown', onRemove: () => ctl.setParam(f.param, null)));
     }
@@ -221,13 +311,26 @@ class _ModuleListScreenState<T> extends ConsumerState<ModuleListScreen<T>> {
             scrollDirection: Axis.horizontal,
             child: Row(children: [
               for (final ch in chips) Padding(padding: const EdgeInsets.only(right: 8), child: ch),
+              if (widget.sortable)
+                GestureDetector(
+                  onTap: () => ctl.setParam(kOrderParam, q.oldestFirst ? null : 'asc'),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                    child: Row(children: [
+                      AppIcon(AppIcons.chevronDown, size: 16, color: c.accent),
+                      const SizedBox(width: 4),
+                      Text(q.oldestFirst ? 'Earliest first' : 'Latest first', style: AppText.footnote.copyWith(color: c.accent)),
+                      const SizedBox(width: 10),
+                    ]),
+                  ),
+                ),
               if (widget.filters.isNotEmpty)
                 GestureDetector(
                   onTap: () => _openFilters(context),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                     child: Row(children: [
-                      Icon(CupertinoIcons.slider_horizontal_3, size: 16, color: c.accent),
+                      AppIcon(AppIcons.filter, size: 16, color: c.accent),
                       const SizedBox(width: 4),
                       Text('Filters', style: AppText.footnote.copyWith(color: c.accent)),
                     ]),
@@ -255,7 +358,7 @@ class _ModuleListScreenState<T> extends ConsumerState<ModuleListScreen<T>> {
 
   Widget _footer(AppColors c, PagedState<T> s) {
     if (s.loadingMore) {
-      return const Padding(padding: EdgeInsets.all(AppSpace.lg), child: Center(child: CupertinoActivityIndicator()));
+      return const Padding(padding: EdgeInsets.all(AppSpace.lg), child: Center(child: AppSpinner()));
     }
     if (s.loadMoreError != null) {
       return Padding(
@@ -297,7 +400,7 @@ class _Chip extends StatelessWidget {
             label: 'Remove filter',
             child: GestureDetector(
               onTap: onRemove,
-              child: SizedBox(width: 30, height: 30, child: Icon(CupertinoIcons.xmark, size: 12, color: c.accent)),
+              child: SizedBox(width: 30, height: 30, child: AppIcon(AppIcons.close, size: 12, color: c.accent)),
             ),
           ),
         ],
@@ -332,7 +435,10 @@ class _FilterSheetState extends State<_FilterSheet> {
               children: [
                 const Expanded(child: Text('Filters', style: AppText.title)),
                 TextButton(
-                  onPressed: () => setState(() => _q = ListQuery(search: _q.search)),
+                  onPressed: () => setState(() => _q = ListQuery(
+                        search: _q.search,
+                        params: {if (_q.oldestFirst) kOrderParam: 'asc'},
+                      )),
                   child: const Text('Reset'),
                 ),
               ],
@@ -365,6 +471,15 @@ class _FilterSheetState extends State<_FilterSheet> {
                               ),
                             ),
                           );
+                          if (picked != null) setState(() => _q = _q.withParam(f.param, picked));
+                        },
+                      ),
+                    PickerFilter(:final pick) => ValueRow(
+                        label: f.label,
+                        placeholder: 'Any',
+                        value: _q.params[f.param],
+                        onTap: () async {
+                          final picked = await pick(context);
                           if (picked != null) setState(() => _q = _q.withParam(f.param, picked));
                         },
                       ),

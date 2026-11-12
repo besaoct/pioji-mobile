@@ -84,6 +84,12 @@ jobs:
           cache: true
 
       - run: flutter pub get
+      - name: No Cupertino
+        run: |
+          if grep -rnE "package:flutter/cupertino.dart|Cupertino[A-Z]" lib; then
+            echo "The app uses its own widgets; Cupertino is not allowed." >&2
+            exit 1
+          fi
       - run: flutter analyze
       - run: flutter test
 

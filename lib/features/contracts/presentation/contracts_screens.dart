@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,6 +22,7 @@ import '../../../core/widgets/status_badge.dart';
 import '../../masters/data/masters_repository.dart';
 import '../../masters/presentation/master_picker.dart';
 import '../data/contracts_repository.dart';
+import '../../../core/design/app_icons.dart';
 
 class ContractsListScreen extends StatelessWidget {
   const ContractsListScreen({super.key});
@@ -34,7 +35,7 @@ class ContractsListScreen extends StatelessWidget {
       listProvider: contractsListProvider,
       queryProvider: contractsQueryProvider,
       searchHint: 'Search title, number or seller',
-      emptyIcon: CupertinoIcons.doc_plaintext,
+      emptyIcon: AppIcons.document,
       emptyTitle: 'Create your first contract',
       emptyBody: 'Supply contracts with their grades, prices and validity show up here.',
       newLabel: 'New contract',
@@ -42,14 +43,37 @@ class ContractsListScreen extends StatelessWidget {
       actions: [AddButton(semanticLabel: 'New contract', onPressed: () => context.pushNamed(Routes.contractNew))],
       segments: SegmentConfig(param: 'status', options: {'': 'All', for (final s in ContractStatus.values) s.api: s.label}),
       filters: const [DateFilter('date_from', 'Effective from'), DateFilter('date_to', 'Expires by')],
-      itemBuilder: (context, k) => AppListRow(
-        title: k.title,
-        subtitle: [k.number, k.sellerName, '${Fmt.dayShort(k.effective)} – ${Fmt.day(k.expiry)}'].whereType<String>().join(' · '),
-        onTap: () => context.pushNamed(Routes.contractDetail, pathParameters: {'id': '${k.id}'}, extra: k),
-        trailing: k.expiringSoon ? const StatusBadge('Expiring', tone: Tone.warning) : StatusBadge(k.status.label, tone: k.status.tone),
+      // Cover view: the validity and who it is with; the number and the
+      // rest are on the detail screen.
+      itemBuilder: (context, k) => Consumer(
+        builder: (context, ref, _) => AppListRow(
+          title: _range(k),
+          subtitle: [_buyerName(ref, k) ?? 'No buyer', ?k.sellerName].join(' · '),
+          onTap: () => context.pushNamed(Routes.contractDetail, pathParameters: {'id': '${k.id}'}, extra: k),
+          trailing: k.expiringSoon ? const StatusBadge('Expiring', tone: Tone.warning) : StatusBadge(k.status.label, tone: k.status.tone),
+        ),
       ),
     );
   }
+}
+
+/// "1 Aug – 31 Aug 2026", or with both years when they differ.
+String _range(Contract k) {
+  final a = k.effective, b = k.expiry;
+  if (a == null && b == null) return k.title;
+  if (a == null || b == null || DateUtils.isSameDay(a, b)) return Fmt.day(a ?? b);
+  return a.year == b.year ? '${Fmt.dayShort(a)} – ${Fmt.day(b)}' : '${Fmt.day(a)} – ${Fmt.day(b)}';
+}
+
+/// The API sends only `buyer_id` on contracts; the name comes from the buyer list.
+String? _buyerName(WidgetRef ref, Contract k) {
+  if (k.buyerName != null) return k.buyerName;
+  if (k.buyerId == null) return null;
+  final buyers = ref.watch(buyersProvider).value ?? const <MasterItem>[];
+  for (final b in buyers) {
+    if (b.id == k.buyerId) return b.name;
+  }
+  return 'Buyer #${k.buyerId}';
 }
 
 class _ItemDraft {
@@ -213,7 +237,7 @@ class _ContractFormScreenState extends ConsumerState<ContractFormScreen> with Fo
           ),
         Row(
           children: [
-            SecondaryButton(label: 'Add item', icon: CupertinoIcons.add, onPressed: () => setState(() => _items.add(_ItemDraft()))),
+            SecondaryButton(label: 'Add item', icon: AppIcons.add, onPressed: () => setState(() => _items.add(_ItemDraft()))),
             const Spacer(),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Text(Fmt.money(value), style: AppText.headline),
@@ -249,7 +273,7 @@ class ContractDetailScreen extends StatelessWidget {
             InfoRow('Number', k.number),
             InfoRow('Status', k.expiringSoon ? 'Expiring soon' : k.status.label, valueColor: k.expiringSoon ? c.warning : null),
             InfoRow('Seller', k.sellerName),
-            InfoRow('Buyer', k.buyerName),
+            Consumer(builder: (context, ref, _) => InfoRow('Buyer', _buyerName(ref, k))),
             InfoRow('Valid', '${Fmt.day(k.effective)} – ${Fmt.day(k.expiry)}'),
             InfoRow('Prompt days', k.promptDays?.toString()),
             InfoRow('Discount', k.discount == null ? null : '${Fmt.editable(k.discount)}%'),

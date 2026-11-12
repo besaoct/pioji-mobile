@@ -1,4 +1,4 @@
-# Design system — palette 9 "Assam green iOS"
+# Design system — palette 9 "Assam green"
 
 Approved by the user on 29 Oct 2026. Source of truth in code: `lib/core/design/tokens.dart`, `typography.dart`, `theme.dart`.
 
@@ -25,13 +25,19 @@ Approved by the user on 29 Oct 2026. Source of truth in code: `lib/core/design/t
 ## Shape and depth
 
 - **Cards have no border.** They stand out by tone (surface on background) plus a two-layer shadow in light mode only (`0 1 2 @4%`, `0 6 16 @3.5%`). Dark mode: no shadow.
-- **Smooth iOS corners** everywhere via `RoundedSuperellipseBorder`: control 11, card 14, sheet 20, tile 7–8.
-- Rows inside one card are split by 0.5 px hairlines inset to the text edge (iOS Settings style).
+- Smooth corners via `RoundedSuperellipseBorder`: control 11, card 14, sheet 20, tile 7–8.
+- Sections are one flat surface (radius 11, no shadow) with full-width 0.5 px hairlines between rows.
 - No blur, no frosted glass, no gradients except the tab bar.
 
 ## Typography
 
-System font only (SF on iOS, Roboto on Android). No monospace, even for invoice and tracking numbers. Two working weights: 400 and 600 (500 for row titles). Large title 30, title 20, headline 17, body 16, callout 15, footnote 13, caption 12, tab label 11. Selected states change colour, never weight or size.
+Inter on both platforms, bundled in `assets/fonts/`. No monospace, even for invoice and tracking numbers. Two working weights: 400 and 600 (500 for row titles). Title 20 (tab screens), headline 17 (pushed screens), large title 30 (sign in, onboarding), headline 17, body 16, callout 15, footnote 13, caption 12, tab label 11. Selected states change colour, never weight or size.
+
+## Controls and icons (since 12 Nov 2026)
+
+- **No Cupertino.** Nothing imports `package:flutter/cupertino.dart`; CI fails if it comes back. Every control is our own and looks the same on Android and iOS: `AppSpinner`, `AppRefresh`, `AppDialog` / `confirm`, `chooseAction` (bottom sheet), `pickDate` (month calendar), `AppSwitch`, one page transition (`AppPageTransitionsBuilder`).
+- **Icons:** our own 24 × 24 outline SVGs (1.75 stroke) in `assets/icons/`, drawn by `AppIcon(AppIcons.x)`. Only `check_circle_fill` and `clear` are filled.
+- **Top bar:** fixed 56 px (`AppTopBar`): chevron back (‹) on pushed screens, close (×) on forms, title, actions on the right.
 
 ## Hard rules (user preferences)
 

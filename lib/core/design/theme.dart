@@ -1,12 +1,12 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'tokens.dart';
 import 'typography.dart';
+import '../widgets/controls.dart';
 
 ThemeData buildTheme(Brightness brightness) {
   final c = brightness == Brightness.light ? AppColors.light : AppColors.dark;
-  final base = ThemeData(useMaterial3: true, brightness: brightness);
+  final base = ThemeData(useMaterial3: true, brightness: brightness, fontFamily: AppText.family);
   const noOverlay = WidgetStatePropertyAll<Color>(Colors.transparent);
   final controlShape = const WidgetStatePropertyAll<OutlinedBorder>(AppRadius.controlBorder);
   // InputBorder.none: an outline border adds side gap padding, which would
@@ -94,11 +94,10 @@ ThemeData buildTheme(Brightness brightness) {
       ),
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: c.accent),
-    cupertinoOverrideTheme: CupertinoThemeData(primaryColor: c.accent, brightness: brightness),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
-        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.android: AppPageTransitionsBuilder(),
+        TargetPlatform.iOS: AppPageTransitionsBuilder(),
       },
     ),
   );

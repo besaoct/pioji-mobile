@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,7 +5,10 @@ import '../design/context_ext.dart';
 import '../design/tokens.dart';
 import '../design/typography.dart';
 import '../utils/formatters.dart';
+import 'buttons.dart';
+import 'controls.dart';
 import 'one_line_text.dart';
+import '../design/app_icons.dart';
 
 /// Text input inside a grouped card: small label above, value below,
 /// error text under the value. No border, no focus ring.
@@ -174,7 +176,7 @@ class ValueRow extends StatelessWidget {
                     ),
                     if (showChevron) ...[
                       const SizedBox(width: 6),
-                      Icon(CupertinoIcons.chevron_right, size: 15, color: c.textTertiary),
+                      AppIcon(AppIcons.chevronRight, size: 15, color: c.textTertiary),
                     ],
                   ],
                 ),
@@ -191,7 +193,7 @@ class ValueRow extends StatelessWidget {
   }
 }
 
-/// iOS switch row.
+/// Label with a switch on the right.
 class SwitchRow extends StatelessWidget {
   const SwitchRow({super.key, required this.label, required this.value, required this.onChanged});
 
@@ -201,7 +203,6 @@ class SwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: AppSpace.rowMinH),
       child: Padding(
@@ -209,7 +210,7 @@ class SwitchRow extends StatelessWidget {
         child: Row(
           children: [
             Expanded(child: Text(label, style: AppText.body)),
-            CupertinoSwitch(value: value, onChanged: onChanged, activeTrackColor: c.accentFill),
+            AppSwitch(value: value, onChanged: onChanged),
           ],
         ),
       ),
@@ -217,7 +218,7 @@ class SwitchRow extends StatelessWidget {
   }
 }
 
-/// iOS segmented control on a fill track.
+/// Segmented control on a fill track.
 class Segmented<T> extends StatelessWidget {
   const Segmented({super.key, required this.options, required this.selected, required this.onChanged, this.compact = false});
 
@@ -272,37 +273,150 @@ class Segmented<T> extends StatelessWidget {
   }
 }
 
-/// Opens an iOS date wheel in a sheet. Returns null if dismissed.
+/// Opens a month calendar in a sheet. Returns null if dismissed.
 Future<DateTime?> pickDate(BuildContext context, {DateTime? initial, DateTime? minimum}) {
-  var value = initial ?? DateTime.now();
-  if (minimum != null && value.isBefore(minimum)) value = minimum;
   return showModalBottomSheet<DateTime>(
     context: context,
-    builder: (ctx) => SafeArea(
+    isScrollControlled: true,
+    builder: (ctx) => SafeArea(child: _CalendarSheet(initial: initial, minimum: minimum)),
+  );
+}
+
+class _CalendarSheet extends StatefulWidget {
+  const _CalendarSheet({this.initial, this.minimum});
+  final DateTime? initial;
+  final DateTime? minimum;
+
+  @override
+  State<_CalendarSheet> createState() => _CalendarSheetState();
+}
+
+class _CalendarSheetState extends State<_CalendarSheet> {
+  static const _weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  late final DateTime _today = DateUtils.dateOnly(DateTime.now());
+  late final DateTime? _min = widget.minimum == null ? null : DateUtils.dateOnly(widget.minimum!);
+  late final DateTime? _selected = widget.initial == null ? null : DateUtils.dateOnly(widget.initial!);
+  late DateTime _month = DateTime((_selected ?? _today).year, (_selected ?? _today).month);
+
+  bool _allowed(DateTime d) => _min == null || !d.isBefore(_min);
+
+  void _shift(int months) => setState(() => _month = DateTime(_month.year, _month.month + months));
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final first = DateTime(_month.year, _month.month);
+    final lead = (first.weekday + 6) % 7; // Monday first
+    final days = DateUtils.getDaysInMonth(_month.year, _month.month);
+    final cells = <DateTime?>[
+      for (var i = 0; i < lead; i++) null,
+      for (var d = 1; d <= days; d++) DateTime(_month.year, _month.month, d),
+    ];
+    while (cells.length % 7 != 0) {
+      cells.add(null);
+    }
+    final canGoBack = _min == null || _month.isAfter(DateTime(_min.year, _min.month));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(
-            height: 216,
-            child: CupertinoDatePicker(
-              mode: CupertinoDatePickerMode.date,
-              initialDateTime: value,
-              minimumDate: minimum,
-              onDateTimeChanged: (d) => value = d,
-            ),
+          Row(
+            children: [
+              Expanded(child: Text(Fmt.monthYear(_month), style: AppText.headline)),
+              _NavButton(icon: AppIcons.chevronLeft, label: 'Previous month', onTap: canGoBack ? () => _shift(-1) : null),
+              _NavButton(icon: AppIcons.chevronRight, label: 'Next month', onTap: () => _shift(1)),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpace.lg),
-            child: SizedBox(
-              height: 50,
-              width: double.infinity,
-              child: FilledButton(onPressed: () => Navigator.pop(ctx, value), child: const Text('Done')),
-            ),
+          const SizedBox(height: AppSpace.sm),
+          Row(
+            children: [
+              for (final w in _weekdays)
+                Expanded(child: Center(child: Text(w, style: AppText.caption.copyWith(color: c.textTertiary)))),
+            ],
+          ),
+          const SizedBox(height: AppSpace.xs),
+          for (var r = 0; r < cells.length; r += 7)
+            Row(children: [for (final d in cells.sublist(r, r + 7)) Expanded(child: _dayCell(c, d))]),
+          const SizedBox(height: AppSpace.sm),
+          Row(
+            children: [
+              if (_allowed(_today)) LinkButton(label: 'Today', onPressed: () => Navigator.pop(context, _today)),
+              const Spacer(),
+              LinkButton(label: 'Cancel', color: c.textSecondary, onPressed: () => Navigator.pop(context)),
+            ],
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
+
+  Widget _dayCell(AppColors c, DateTime? d) {
+    if (d == null) return const SizedBox(height: 44);
+    final selected = _selected != null && DateUtils.isSameDay(d, _selected);
+    final today = DateUtils.isSameDay(d, _today);
+    final ok = _allowed(d);
+    return Semantics(
+      button: ok,
+      selected: selected,
+      label: Fmt.day(d),
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: ok ? () => Navigator.pop(context, d) : null,
+        child: SizedBox(
+          height: 44,
+          child: Center(
+            child: Container(
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected ? c.accentFill : (today ? c.accentTint : null),
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '${d.day}',
+                style: AppText.callout.copyWith(
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  fontWeight: selected || today ? FontWeight.w600 : FontWeight.w400,
+                  color: selected ? c.onAccent : (!ok ? c.textTertiary.withValues(alpha: 0.5) : (today ? c.accent : c.textPrimary)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavButton extends StatelessWidget {
+  const _NavButton({required this.icon, required this.label, this.onTap});
+  final AppIcons icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Semantics(
+      button: true,
+      enabled: onTap != null,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(child: AppIcon(icon, size: 20, color: onTap == null ? c.textTertiary.withValues(alpha: 0.4) : c.textPrimary)),
+        ),
+      ),
+    );
+  }
 }
 
 /// Date row that opens [pickDate].

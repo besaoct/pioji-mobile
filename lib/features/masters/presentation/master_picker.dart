@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,7 +10,20 @@ import '../../../core/widgets/app_list_row.dart';
 import '../../../core/widgets/fields.dart';
 import '../../../core/widgets/search_field.dart';
 import '../../../core/widgets/sheets.dart';
+import '../../../core/utils/formatters.dart';
 import '../data/masters_repository.dart';
+import '../../../core/design/app_icons.dart';
+import '../../../core/widgets/controls.dart';
+
+/// Opens the full garden list to pick a mark (used by list filters).
+Future<String?> pickMark(BuildContext context) async {
+  final g = await showModalBottomSheet<MasterItem>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => _RemoteSearchSheet(title: 'Mark', path: '/gardens', initial: gardensProvider),
+  );
+  return g?.name;
+}
 
 class _RemoteSearchSheet extends ConsumerStatefulWidget {
   const _RemoteSearchSheet({required this.title, required this.path, required this.initial, this.selectedId});
@@ -26,6 +38,8 @@ class _RemoteSearchSheet extends ConsumerStatefulWidget {
 }
 
 class _RemoteSearchSheetState extends ConsumerState<_RemoteSearchSheet> {
+  /// The full list when it loaded; searched on the phone.
+  List<MasterItem>? _all;
   List<MasterItem>? _results;
   bool _loading = true;
   int _seq = 0;
@@ -34,11 +48,23 @@ class _RemoteSearchSheetState extends ConsumerState<_RemoteSearchSheet> {
   void initState() {
     super.initState();
     ref.read(widget.initial.future).then((v) {
-      if (mounted && _seq == 0) setState(() => (_results = v, _loading = false));
+      if (!mounted) return;
+      setState(() => (_all = v.isEmpty ? null : v, _results = v, _loading = false));
     });
   }
 
   Future<void> _search(String q) async {
+    final all = _all;
+    if (all != null) {
+      final t = q.trim().toLowerCase();
+      setState(() => _results = t.isEmpty
+          ? all
+          : [
+              ...all.where((i) => i.name.toLowerCase().startsWith(t)),
+              ...all.where((i) => !i.name.toLowerCase().startsWith(t) && i.name.toLowerCase().contains(t)),
+            ]);
+      return;
+    }
     final seq = ++_seq;
     setState(() => _loading = true);
     final r = await ref.read(mastersRepositoryProvider).search(widget.path, q);
@@ -61,27 +87,40 @@ class _RemoteSearchSheetState extends ConsumerState<_RemoteSearchSheet> {
               Text(widget.title, style: AppText.title),
               const SizedBox(height: AppSpace.md),
               SearchField(hint: 'Search by name', onChanged: _search),
+              if (_all != null) ...[
+                const SizedBox(height: AppSpace.xs),
+                Text(
+                  '${Fmt.number(items.length)} of ${Fmt.number(_all!.length)}',
+                  style: AppText.footnote.copyWith(color: c.textTertiary),
+                ),
+              ],
               const SizedBox(height: AppSpace.md),
               Expanded(
                 child: _loading && items.isEmpty
-                    ? const Center(child: CupertinoActivityIndicator())
+                    ? const Center(child: AppSpinner())
                     : items.isEmpty
                         ? Center(child: Text('No matches', style: AppText.callout.copyWith(color: c.textTertiary)))
-                        : SingleChildScrollView(
-                            child: GroupedSection(
-                              children: [
-                                for (final i in items)
-                                  AppListRow(
-                                    title: i.name,
-                                    subtitle: i.subtitle,
-                                    minHeight: 48,
-                                    titleStyle: AppText.body,
-                                    onTap: () => Navigator.pop(context, i),
-                                    trailing: i.id == widget.selectedId
-                                        ? Icon(CupertinoIcons.checkmark_alt, color: c.accent, size: 20)
-                                        : null,
-                                  ),
-                              ],
+                        : Container(
+                            clipBehavior: Clip.antiAlias,
+                            decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(AppRadius.control)),
+                            child: ListView.separated(
+                              padding: EdgeInsets.zero,
+                              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                              itemCount: items.length,
+                              separatorBuilder: (_, _) => const Divider(height: 0.5),
+                              itemBuilder: (_, n) {
+                                final i = items[n];
+                                return AppListRow(
+                                  title: i.name,
+                                  subtitle: i.subtitle,
+                                  minHeight: 48,
+                                  titleStyle: AppText.body,
+                                  onTap: () => Navigator.pop(context, i),
+                                  trailing: i.id == widget.selectedId
+                                      ? AppIcon(AppIcons.check, color: c.accent, size: 20)
+                                      : null,
+                                );
+                              },
                             ),
                           ),
               ),
@@ -246,14 +285,14 @@ class _CreatableSheetState extends ConsumerState<_CreatableSheet> {
                               minHeight: 48,
                               titleStyle: AppText.body.copyWith(color: c.accent),
                               leading: _creating
-                                  ? const CupertinoActivityIndicator()
-                                  : Icon(CupertinoIcons.add_circled, color: c.accent, size: 20),
+                                  ? const AppSpinner()
+                                  : AppIcon(AppIcons.addCircle, color: c.accent, size: 20),
                               onTap: _creating ? null : () => _create(q),
                             ),
                           ],
                         ),
                       if (list.isLoading && all.isEmpty)
-                        const Padding(padding: EdgeInsets.all(AppSpace.xl), child: Center(child: CupertinoActivityIndicator()))
+                        const Padding(padding: EdgeInsets.all(AppSpace.xl), child: Center(child: AppSpinner()))
                       else if (matches.isNotEmpty)
                         GroupedSection(
                           children: [
@@ -264,7 +303,7 @@ class _CreatableSheetState extends ConsumerState<_CreatableSheet> {
                                 minHeight: 48,
                                 titleStyle: AppText.body,
                                 onTap: () => Navigator.pop(context, i),
-                                trailing: i.id == widget.selectedId ? Icon(CupertinoIcons.checkmark_alt, color: c.accent, size: 20) : null,
+                                trailing: i.id == widget.selectedId ? AppIcon(AppIcons.check, color: c.accent, size: 20) : null,
                               ),
                           ],
                         )
@@ -317,27 +356,17 @@ class GradePickerRow extends ConsumerWidget {
 
 Future<int?> _askId(BuildContext context, String label, int? current) {
   final ctl = TextEditingController(text: current?.toString() ?? '');
-  return showCupertinoDialog<int>(
-    context: context,
-    builder: (ctx) => CupertinoAlertDialog(
-      title: Text('$label ID'),
-      content: Padding(
-        padding: const EdgeInsets.only(top: 12),
-        child: Column(
-          children: [
-            const Text("The list isn't available yet. Enter the ID from the admin panel."),
-            const SizedBox(height: 10),
-            CupertinoTextField(controller: ctl, keyboardType: TextInputType.number, autofocus: true, placeholder: 'ID'),
-          ],
-        ),
+  return showAppDialog<int>(
+    context,
+    builder: (ctx) => AppDialog(
+      title: '$label ID',
+      body: "The list isn't available yet. Enter the ID from the admin panel.",
+      content: AppCard(
+        child: FieldInput(label: 'ID', controller: ctl, keyboardType: TextInputType.number, inputFormatters: digitsOnly),
       ),
       actions: [
-        CupertinoDialogAction(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-        CupertinoDialogAction(
-          isDefaultAction: true,
-          onPressed: () => Navigator.pop(ctx, int.tryParse(ctl.text.trim())),
-          child: const Text('Use'),
-        ),
+        AppDialogAction('Cancel', () => Navigator.pop(ctx)),
+        AppDialogAction('Use', () => Navigator.pop(ctx, int.tryParse(ctl.text.trim())), primary: true),
       ],
     ),
   );
@@ -418,7 +447,7 @@ class _PartySheetState extends ConsumerState<_PartySheet> {
                                 subtitle: 'Not in the buyers list',
                                 minHeight: 48,
                                 titleStyle: AppText.body.copyWith(color: c.accent),
-                                leading: Icon(CupertinoIcons.pencil, color: c.accent, size: 20),
+                                leading: AppIcon(AppIcons.edit, color: c.accent, size: 20),
                                 onTap: () => Navigator.pop(context, q),
                               ),
                             if (hasCurrent)
@@ -431,7 +460,7 @@ class _PartySheetState extends ConsumerState<_PartySheet> {
                           ],
                         ),
                       if (buyers.isLoading && all.isEmpty)
-                        const Padding(padding: EdgeInsets.all(AppSpace.xl), child: Center(child: CupertinoActivityIndicator()))
+                        const Padding(padding: EdgeInsets.all(AppSpace.xl), child: Center(child: AppSpinner()))
                       else if (matches.isNotEmpty)
                         GroupedSection(
                           label: 'Buyers',
@@ -443,7 +472,7 @@ class _PartySheetState extends ConsumerState<_PartySheet> {
                                 minHeight: 48,
                                 titleStyle: AppText.body,
                                 onTap: () => Navigator.pop(context, b.name),
-                                trailing: b.name == widget.current ? Icon(CupertinoIcons.checkmark_alt, color: c.accent, size: 20) : null,
+                                trailing: b.name == widget.current ? AppIcon(AppIcons.check, color: c.accent, size: 20) : null,
                               ),
                           ],
                         )

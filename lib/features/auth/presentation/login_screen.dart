@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +14,7 @@ import '../../../core/widgets/logo.dart';
 import '../../../core/widgets/states.dart';
 import '../application/auth_controller.dart';
 import '../domain/user.dart';
+import '../../../core/design/app_icons.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -126,7 +126,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: SizedBox(
                             width: 44,
                             height: 44,
-                            child: Icon(_hidden ? CupertinoIcons.eye : CupertinoIcons.eye_slash, color: c.textTertiary, size: 20),
+                            child: AppIcon(_hidden ? AppIcons.eye : AppIcons.eyeOff, color: c.textTertiary, size: 20),
                           ),
                         ),
                       ),

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,12 +7,13 @@ import '../../../core/design/typography.dart';
 import '../../../core/storage/prefs.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/buttons.dart';
+import '../../../core/design/app_icons.dart';
 
 class _Page {
   const _Page(this.title, this.body, this.icon, this.rows);
   final String title;
   final String body;
-  final IconData icon;
+  final AppIcons icon;
   final List<(String, String)> rows;
 }
 
@@ -21,19 +21,19 @@ const _pages = [
   _Page(
     'Track every lot',
     'Offer lists, samples and batches in one place, from arrival to the tasting table.',
-    CupertinoIcons.lab_flask,
+    AppIcons.samples,
     [('Samples', 'Arrival, grade and weight'), ('Batches', 'Up to 48 samples each')],
   ),
   _Page(
     'Allocate and bid faster',
     "Assign buyers to today's samples and manage the bid book on the go.",
-    CupertinoIcons.hammer,
+    AppIcons.bids,
     [('Allocation', 'One lot or many at once'), ('Bid book', 'Open, parked, held, closed')],
   ),
   _Page(
     'Close the loop',
     'Courier, contracts, sales and ex-factory reconciliation, all from your phone.',
-    CupertinoIcons.checkmark_seal,
+    AppIcons.courier,
     [('Courier', 'Scan tracking numbers'), ('Ex-factory', 'Matched against sales')],
   ),
 ];
@@ -129,7 +129,7 @@ class _PageView extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: ShapeDecoration(color: c.accentTint, shape: AppRadius.controlBorder),
-                child: Icon(page.icon, color: c.accent, size: 26),
+                child: AppIcon(page.icon, color: c.accent, size: 26),
               ),
               const SizedBox(width: AppSpace.md),
               Expanded(

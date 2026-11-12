@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,11 +7,12 @@ import '../design/tokens.dart';
 import '../design/typography.dart';
 import '../errors/app_failure.dart';
 import 'buttons.dart';
+import '../design/app_icons.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({super.key, required this.icon, required this.title, required this.body, this.actionLabel, this.onAction});
 
-  final IconData icon;
+  final AppIcons icon;
   final String title;
   final String body;
   final String? actionLabel;
@@ -26,7 +26,7 @@ class EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 36, color: c.textTertiary),
+          AppIcon(icon, size: 36, color: c.textTertiary),
           const SizedBox(height: AppSpace.md),
           Text(title, style: AppText.headline, textAlign: TextAlign.center),
           const SizedBox(height: AppSpace.xs + 2),
@@ -51,7 +51,7 @@ class ErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     final failure = error is AppFailure ? error as AppFailure : UnknownFailure(error);
     return EmptyState(
-      icon: failure is OfflineFailure ? CupertinoIcons.wifi_slash : CupertinoIcons.exclamationmark_circle,
+      icon: failure is OfflineFailure ? AppIcons.offline : AppIcons.alert,
       title: failure is OfflineFailure ? "You're offline" : "Couldn't load this",
       body: failure.message,
       actionLabel: 'Try again',
@@ -144,7 +144,7 @@ class OfflineBanner extends ConsumerWidget {
       decoration: ShapeDecoration(color: c.warning.withValues(alpha: 0.12), shape: AppRadius.controlBorder),
       child: Row(
         children: [
-          Icon(CupertinoIcons.wifi_slash, size: 16, color: c.warning),
+          AppIcon(AppIcons.offline, size: 16, color: c.warning),
           const SizedBox(width: AppSpace.sm),
           Expanded(
             child: Text("You're offline. Changes can't be saved until you reconnect.",
@@ -170,7 +170,7 @@ class FormBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(CupertinoIcons.exclamationmark_circle, size: 18, color: c.danger),
+          AppIcon(AppIcons.alert, size: 18, color: c.danger),
           const SizedBox(width: 10),
           Expanded(child: Text(message, style: AppText.callout.copyWith(color: c.danger))),
         ],

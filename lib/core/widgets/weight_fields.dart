@@ -50,7 +50,9 @@ class _WeightFieldsState extends State<WeightFields> {
       total: Fmt.parse(widget.total.text),
     );
     void put(TextEditingController c, double? v, WeightField which) {
-      if (_calc.derived == which && v != null) c.text = Fmt.editable(v);
+      if (_calc.derived != which) return;
+      final text = v == null ? '' : Fmt.editable(v);
+      if (c.text != text) c.text = text;
     }
 
     put(widget.pkgs, r.pkgs, WeightField.pkgs);

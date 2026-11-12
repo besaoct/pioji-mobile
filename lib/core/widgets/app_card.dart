@@ -26,15 +26,15 @@ class AppCard extends StatelessWidget {
   }
 }
 
-/// iOS grouped list: a dim caption, then one card whose rows are split by
-/// hairlines inset to the text's left edge.
+/// A section: small heading, then one flat surface whose rows are split by
+/// full-width hairlines.
 class GroupedSection extends StatelessWidget {
   const GroupedSection({
     super.key,
     this.label,
     required this.children,
     this.footer,
-    this.dividerIndent = AppSpace.lg,
+    this.dividerIndent = 0,
     this.trailingLabel,
   });
 
@@ -60,12 +60,16 @@ class GroupedSection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(AppSpace.xs, 0, AppSpace.xs, AppSpace.sm - 1),
             child: Row(
               children: [
-                Expanded(child: Text(label!, style: AppText.footnote.copyWith(color: c.textTertiary))),
+                Expanded(child: Text(label!, style: AppText.caption.copyWith(color: c.textSecondary, fontWeight: FontWeight.w600))),
                 ?trailingLabel,
               ],
             ),
           ),
-        AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows)),
+        Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(AppRadius.control)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
+        ),
         if (footer != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(AppSpace.xs, AppSpace.sm - 1, AppSpace.xs, 0),

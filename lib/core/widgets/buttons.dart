@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../design/context_ext.dart';
 import '../design/tokens.dart';
 import '../design/typography.dart';
+import '../design/app_icons.dart';
 
 /// Deep filled button. While [loading] it shows a spinner and ignores taps,
 /// so a form can never be submitted twice.
@@ -48,7 +48,7 @@ class SecondaryButton extends StatelessWidget {
 
   final String label;
   final VoidCallback? onPressed;
-  final IconData? icon;
+  final AppIcons? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +64,7 @@ class SecondaryButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[Icon(icon, size: 18), const SizedBox(width: AppSpace.xs + 2)],
+            if (icon != null) ...[AppIcon(icon!, size: 18), const SizedBox(width: AppSpace.xs + 2)],
             Text(label, style: AppText.callout.copyWith(fontWeight: FontWeight.w500)),
           ],
         ),
@@ -131,7 +131,7 @@ class AddButton extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(color: c.accentFill, shape: BoxShape.circle),
-              child: Icon(CupertinoIcons.add, color: c.onAccent, size: 20),
+              child: AppIcon(AppIcons.add, color: c.onAccent, size: 20),
             ),
           ),
         ),
@@ -144,7 +144,7 @@ class AddButton extends StatelessWidget {
 class CircleIconButton extends StatelessWidget {
   const CircleIconButton({super.key, required this.icon, required this.onPressed, required this.semanticLabel, this.tinted = false});
 
-  final IconData icon;
+  final AppIcons icon;
   final VoidCallback onPressed;
   final String semanticLabel;
   final bool tinted;
@@ -165,7 +165,7 @@ class CircleIconButton extends StatelessWidget {
             shape: tinted ? AppRadius.controlBorder : const CircleBorder(),
             shadows: tinted ? null : c.cardShadow,
           ),
-          child: Icon(icon, size: 21, color: tinted ? c.accent : c.textSecondary),
+          child: AppIcon(icon, size: 21, color: tinted ? c.accent : c.textSecondary),
         ),
       ),
     );

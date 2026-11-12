@@ -63,7 +63,19 @@ class MastersRepository {
     }
   }
 
-  /// Server-side search for large lists (gardens: 2,000+ records).
+  /// A large list in one call (gardens: about 2,200 records), sorted by name.
+  /// The picker searches it on the phone.
+  Future<List<MasterItem>> all(String path) async {
+    try {
+      final p = await _api.page<MasterItem?>(path, MasterItem.fromJson, perPage: 5000);
+      return p.items.whereType<MasterItem>().toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Server-side search, used when the full list couldn't load.
   Future<List<MasterItem>> search(String path, String query) async {
     try {
       final p = await _api.page<MasterItem?>(path, MasterItem.fromJson, query: {'search': query}, perPage: 30);
@@ -131,8 +143,8 @@ class MastersRepository {
 
 final mastersRepositoryProvider = Provider((ref) => MastersRepository(ref.watch(apiProvider)));
 
-/// First page of gardens; the picker searches the server as you type.
-final gardensProvider = FutureProvider((ref) => ref.read(mastersRepositoryProvider).search('/gardens', ''));
+/// Every garden, loaded once; the picker filters it as you type.
+final gardensProvider = FutureProvider((ref) => ref.read(mastersRepositoryProvider).all('/gardens'));
 final buyersProvider = FutureProvider((ref) => ref.read(mastersRepositoryProvider).buyers());
 final sellersProvider = FutureProvider((ref) => ref.read(mastersRepositoryProvider).list('/sellers'));
 final negotiatorsProvider = FutureProvider((ref) => ref.read(mastersRepositoryProvider).list('/negotiators'));

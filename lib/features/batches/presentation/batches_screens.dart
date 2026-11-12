@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,6 +25,8 @@ import '../../samples/data/samples_repository.dart';
 import '../../samples/domain/sample.dart';
 import '../../samples/presentation/samples_list_screen.dart';
 import '../data/batches_repository.dart';
+import '../../../core/design/app_icons.dart';
+import '../../../core/widgets/controls.dart';
 
 class BatchesListScreen extends StatelessWidget {
   const BatchesListScreen({super.key});
@@ -38,7 +39,7 @@ class BatchesListScreen extends StatelessWidget {
       listProvider: batchesListProvider,
       queryProvider: batchesQueryProvider,
       searchHint: 'Search batches',
-      emptyIcon: CupertinoIcons.square_stack_3d_up,
+      emptyIcon: AppIcons.batches,
       emptyTitle: 'Group samples into batches',
       emptyBody: 'Each batch holds up to 48 samples for one tasting session.',
       newLabel: 'Auto-batch a date',
@@ -219,7 +220,7 @@ class _AutoBatchScreenState extends ConsumerState<AutoBatchScreen> with FormSubm
         AppCard(
           padding: const EdgeInsets.all(AppSpace.lg),
           child: unbatched.when(
-            loading: () => const Center(child: CupertinoActivityIndicator()),
+            loading: () => const Center(child: AppSpinner()),
             error: (e, _) => Text(e is AppFailure ? e.message : 'Couldn’t load samples.', style: AppText.callout.copyWith(color: c.danger)),
             data: (list) => Row(
               children: [
@@ -232,7 +233,7 @@ class _AutoBatchScreenState extends ConsumerState<AutoBatchScreen> with FormSubm
                     ],
                   ),
                 ),
-                Icon(CupertinoIcons.arrow_right, color: c.textTertiary),
+                AppIcon(AppIcons.arrowRight, color: c.textTertiary),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,

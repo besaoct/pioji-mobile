@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../core/design/context_ext.dart';
 import '../../../core/design/tokens.dart';
@@ -16,6 +16,7 @@ import '../../../core/widgets/sheets.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/user.dart';
 import '../../ex_factory/data/ex_factory_repository.dart';
+import '../../../core/design/app_icons.dart';
 
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
@@ -28,17 +29,17 @@ class MoreScreen extends ConsumerWidget {
     final ex = ref.watch(exFactoryMetricsProvider).value;
     final mismatches = ex == null ? 0 : (ex[RegisterStatus.priceMismatch] ?? 0) + (ex[RegisterStatus.qtyMismatch] ?? 0);
 
-    Widget reg(String initial, String label, String route, {String? meta}) => AppListRow(
+    Widget reg(AppIcons icon, String label, String route, {String? meta}) => AppListRow(
           title: label,
           titleStyle: AppText.body,
           minHeight: 50,
-          leading: IconTile(initial: initial),
+          leading: IconTile(icon: icon),
           trailing: meta == null ? null : Text(meta, style: AppText.footnote.copyWith(color: c.warning)),
           showChevron: true,
           onTap: () => context.pushNamed(route),
         );
 
-    return LargeTitleScaffold(
+    return PageScaffold(
       title: 'More',
       slivers: [
         SliverList.list(
@@ -72,10 +73,10 @@ class MoreScreen extends ConsumerWidget {
               label: 'Registers',
               dividerIndent: 56,
               children: [
-                reg('C', 'Courier register', Routes.courier),
-                reg('K', 'Contracts', Routes.contracts),
-                reg('S', 'Sales register', Routes.sales),
-                reg('E', 'Ex-factory register', Routes.exFactory, meta: mismatches > 0 ? '$mismatches mismatches' : null),
+                reg(AppIcons.courier, 'Courier register', Routes.courier),
+                reg(AppIcons.contracts, 'Contracts', Routes.contracts),
+                reg(AppIcons.sales, 'Sales register', Routes.sales),
+                reg(AppIcons.exFactory, 'Ex-factory register', Routes.exFactory, meta: mismatches > 0 ? '$mismatches mismatches' : null),
               ],
             ),
             const SizedBox(height: AppSpace.xl),
@@ -118,7 +119,7 @@ class SettingsScreen extends ConsumerWidget {
                 title: switch (m) { ThemeMode.system => 'System', ThemeMode.light => 'Light', ThemeMode.dark => 'Dark' },
                 titleStyle: AppText.body,
                 minHeight: 48,
-                trailing: m == mode ? Icon(CupertinoIcons.checkmark_alt, color: context.colors.accent, size: 20) : null,
+                trailing: m == mode ? AppIcon(AppIcons.check, color: context.colors.accent, size: 20) : null,
                 onTap: () => ref.read(themeModeProvider.notifier).set(m),
               ),
           ],
@@ -126,7 +127,15 @@ class SettingsScreen extends ConsumerWidget {
         GroupedSection(
           label: 'About',
           children: [
-            const AppListRow(title: 'Version', titleStyle: AppText.body, minHeight: 48, trailing: Text('1.0.0 (1)')),
+            AppListRow(
+              title: 'Version',
+              titleStyle: AppText.body,
+              minHeight: 48,
+              trailing: FutureBuilder<PackageInfo>(
+                future: PackageInfo.fromPlatform(),
+                builder: (_, snap) => Text(snap.hasData ? '${snap.data!.version} (${snap.data!.buildNumber})' : ''),
+              ),
+            ),
             AppListRow(title: 'Terms of service', titleStyle: AppText.body, minHeight: 48, showChevron: true, onTap: () => context.pushNamed(Routes.legal, pathParameters: {'doc': 'terms'})),
             AppListRow(title: 'Privacy policy', titleStyle: AppText.body, minHeight: 48, showChevron: true, onTap: () => context.pushNamed(Routes.legal, pathParameters: {'doc': 'privacy'})),
           ],

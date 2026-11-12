@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../design/context_ext.dart';
 import '../design/tokens.dart';
 import '../design/typography.dart';
 import '../utils/debouncer.dart';
+import '../design/app_icons.dart';
 
 class SearchField extends StatefulWidget {
   const SearchField({super.key, required this.hint, required this.onChanged, this.initial = ''});
@@ -37,7 +37,7 @@ class _SearchFieldState extends State<SearchField> {
       decoration: ShapeDecoration(color: c.fill, shape: AppRadius.controlBorder),
       child: Row(
         children: [
-          Icon(CupertinoIcons.search, size: 18, color: c.textTertiary),
+          AppIcon(AppIcons.search, size: 18, color: c.textTertiary),
           const SizedBox(width: 6),
           Expanded(
             child: TextField(
@@ -63,7 +63,7 @@ class _SearchFieldState extends State<SearchField> {
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(6),
-                  child: Icon(CupertinoIcons.clear_circled_solid, size: 18, color: c.textTertiary),
+                  child: AppIcon(AppIcons.clear, size: 18, color: c.textTertiary),
                 ),
               ),
             ),

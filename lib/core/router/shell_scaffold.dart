@@ -1,23 +1,23 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../design/context_ext.dart';
 import '../design/tokens.dart';
 import '../design/typography.dart';
+import '../design/app_icons.dart';
 
 class _Tab {
   const _Tab(this.label, this.icon);
   final String label;
-  final IconData icon;
+  final AppIcons icon;
 }
 
 const _tabs = [
-  _Tab('Samples', CupertinoIcons.lab_flask),
-  _Tab('Offers', CupertinoIcons.doc_text),
-  _Tab('Home', CupertinoIcons.house),
-  _Tab('Bids', CupertinoIcons.hammer),
-  _Tab('More', CupertinoIcons.square_grid_2x2),
+  _Tab('Samples', AppIcons.samples),
+  _Tab('Offers', AppIcons.offers),
+  _Tab('Home', AppIcons.home),
+  _Tab('Bids', AppIcons.bids),
+  _Tab('More', AppIcons.more),
 ];
 
 /// Tab shell: bottom bar on phones, a left rail on tablets. Home sits in the
@@ -129,7 +129,7 @@ class _TabButton extends StatelessWidget {
 
 class _TileIcon extends StatelessWidget {
   const _TileIcon({required this.icon, required this.color, required this.tinted});
-  final IconData icon;
+  final AppIcons icon;
   final Color color;
   final bool tinted;
 
@@ -142,7 +142,7 @@ class _TileIcon extends StatelessWidget {
         color: tinted ? context.colors.accentTint : Colors.transparent,
         shape: const RoundedSuperellipseBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
       ),
-      child: Icon(icon, size: 21, color: color),
+      child: AppIcon(icon, size: 21, color: color),
     );
   }
 }
